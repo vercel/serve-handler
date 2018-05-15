@@ -9,13 +9,13 @@
     arg "^1.0.0"
     chalk "^2.3.0"
 
-"@zeit/eslint-config-node@^0.2.13":
+"@zeit/eslint-config-node@0.2.13":
   version "0.2.13"
   resolved "https://registry.yarnpkg.com/@zeit/eslint-config-node/-/eslint-config-node-0.2.13.tgz#f6aabeb07d1f390830ce7be4774c829f070f3f81"
   dependencies:
     "@zeit/eslint-config-base" "0.2.13"
 
-"@zeit/git-hooks@^0.1.4":
+"@zeit/git-hooks@0.1.4":
   version "0.1.4"
   resolved "https://registry.yarnpkg.com/@zeit/git-hooks/-/git-hooks-0.1.4.tgz#70583db5dd69726a62c7963520e67f2c3a33cc5f"
 
@@ -243,7 +243,7 @@ eslint-visitor-keys@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/eslint-visitor-keys/-/eslint-visitor-keys-1.0.0.tgz#3f3180fb2e291017716acb4c9d6d5b5c34a6a81d"
 
-eslint@^4.19.1:
+eslint@4.19.1:
   version "4.19.1"
   resolved "https://registry.yarnpkg.com/eslint/-/eslint-4.19.1.tgz#32d1d653e1d90408854bfb296f076ec7e186a300"
   dependencies:

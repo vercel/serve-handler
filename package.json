@@ -20,9 +20,9 @@
   },
   "homepage": "https://github.com/zeit/serve-handler#readme",
   "devDependencies": {
-    "@zeit/eslint-config-node": "^0.2.13",
-    "@zeit/git-hooks": "^0.1.4",
-    "eslint": "^4.19.1"
+    "@zeit/eslint-config-node": "0.2.13",
+    "@zeit/git-hooks": "0.1.4",
+    "eslint": "4.19.1"
   },
   "eslintConfig": {
     "extends": [
