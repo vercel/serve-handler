@@ -1,0 +1,20 @@
+{
+  "name": "serve-handler",
+  "version": "1.0.0",
+  "description": "The routing foundation of `serve` and static deployments on Now",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zeit/serve-handler.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/zeit/serve-handler/issues"
+  },
+  "homepage": "https://github.com/zeit/serve-handler#readme"
+}
