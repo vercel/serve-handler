@@ -4,7 +4,9 @@
   "description": "The routing foundation of `serve` and static deployments on Now",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "zeit-eslint --ext .jsx,.js .",
+    "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint"
   },
   "repository": {
     "type": "git",
@@ -16,5 +18,18 @@
   "bugs": {
     "url": "https://github.com/zeit/serve-handler/issues"
   },
-  "homepage": "https://github.com/zeit/serve-handler#readme"
+  "homepage": "https://github.com/zeit/serve-handler#readme",
+  "devDependencies": {
+    "@zeit/eslint-config-node": "^0.2.13",
+    "@zeit/git-hooks": "^0.1.4",
+    "eslint": "^4.19.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "@zeit/eslint-config-node"
+    ]
+  },
+  "git": {
+    "pre-commit": "lint-staged"
+  }
 }
