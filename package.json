@@ -2,7 +2,7 @@
   "name": "serve-handler",
   "version": "1.0.0",
   "description": "The routing foundation of `serve` and static deployments on Now",
-  "main": "index.js",
+  "main": "lib/index.js",
   "scripts": {
     "test": "yarn run lint",
     "lint": "zeit-eslint --ext .jsx,.js .",
