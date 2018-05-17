@@ -1,6 +1,6 @@
 {
   "name": "serve-handler",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "The routing foundation of `serve` and static deployments on Now",
   "main": "lib/index.js",
   "scripts": {
@@ -8,17 +8,14 @@
     "lint": "zeit-eslint --ext .jsx,.js .",
     "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/zeit/serve-handler.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/zeit/serve-handler/issues"
-  },
-  "homepage": "https://github.com/zeit/serve-handler#readme",
+  "repository": "zeit/serve-handler",
+  "keywords": [
+    "static",
+    "deployment",
+    "server"
+  ],
+  "author": "leo",
+  "license": "MIT",
   "devDependencies": {
     "@zeit/eslint-config-node": "0.2.13",
     "@zeit/git-hooks": "0.1.4",
@@ -31,5 +28,10 @@
   },
   "git": {
     "pre-commit": "lint-staged"
+  },
+  "dependencies": {
+    "fs-extra": "6.0.1",
+    "micro": "9.3.1",
+    "path-is-inside": "1.0.2"
   }
 }
