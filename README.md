@@ -39,14 +39,19 @@ In order to allow for customizing the package's default behaviour, we implemente
 
 #### Options
 
-The only difference between them is that the first one is for statically defined options:
+The first one is for statically defined options:
 
 ```js
 await handler(request, response, {
-	cleanURLs: true,
-	rewrites: [...]
+	path: 'dist'
 });
 ```
+
+You can use any of the following options:
+
+| Name   | Description                                                        | Default Value   |
+|--------|--------------------------------------------------------------------|-----------------|
+| `path` | A custom directory to which all requested paths should be relative | `process.cwd()` |
 
 #### Middleware
 
