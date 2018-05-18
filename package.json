@@ -34,6 +34,7 @@
     "fs-extra": "6.0.1",
     "glob-slasher": "1.0.1",
     "mime": "2.3.1",
-    "minimatch": "3.0.4"
+    "minimatch": "3.0.4",
+    "path-to-regexp": "2.2.1"
   }
 }
