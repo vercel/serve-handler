@@ -27,40 +27,162 @@ Next, add it to your HTTP server. Here's an example with [micro](https://github.
 const handler = require('serve-handler');
 
 module.exports = async (request, response) => {
-	await handler(request, response);
+  await handler(request, response);
 };
 ```
 
 That's it! :tada:
 
-### Configuration
+## Options
 
-In order to allow for customizing the package's default behaviour, we implemented two more arguments for the function call. They are both to be seen as configuration arguments.
-
-#### Options
-
-The first one is for statically defined options:
+If you want to customize the package's default behaviour, you can use the third argument of the function call to pass any of the configuration options listed below. Here's an example:
 
 ```js
 await handler(request, response, {
-	path: 'dist'
+  cleanUrls: true
 });
 ```
 
 You can use any of the following options:
 
-| Name   | Description                                                        | Default Value   |
-|--------|--------------------------------------------------------------------|-----------------|
-| `path` | A custom directory to which all requested paths should be relative | `process.cwd()` |
+### public (Boolean)
 
-#### Middleware
+By default, the current working directory will be served. If you only want to serve a specific path, you can use this options to pass a custom directory to be served relative to the current working directory.
 
-While the second one is for passing custom methods to replace the ones used in the package:
+For example, if serving a [Jekyll](https://jekyllrb.com/) app, it would look like this:
+
+```json
+{
+  "public": "_site"
+}
+```
+
+### cleanUrls (Boolean|Array)
+
+Assuming this is `true`, all `.html` and `.htm` files can be accessed without their extension (shown below).
+
+If one of these extensions is used at the end of a filename, it will automatically perform a redirect with status code [301](https://en.wikipedia.org/wiki/HTTP_301) to the same path, but with the extension dropped.
+
+```json
+{
+  "cleanUrls": true
+}
+```
+
+However, you can also restrict this behavior to certain paths:
+
+```json
+{
+  "cleanUrls": [
+    "/app/**",
+    "/!components/**"
+  ]
+}
+```
+
+### rewrites (Array)
+
+If you want your visitors to receive a response under a certain path, but actually serve a completely different one behind the curtains, this option is what you need.
+
+It's perfect for [single page applications](https://en.wikipedia.org/wiki/Single-page_application) (SPAs), for example:
+
+```json
+{
+  "rewrites": [
+    { "source": "app/**", "destination": "/index.html" },
+    { "source": "projects/*/edit", "destination": "/edit-project.html" }
+  ]
+}
+```
+
+You can also use so-called "routing segments" as follows:
+
+```json
+{
+  "rewrites": [
+    { "source": "/projects/:id/edit", "destination": "/edit-project-:id.html" },
+  ]
+}
+```
+
+Now, if a visitor accesses `/projects/123/edit`, it will respond with the file `/edit-project-123.html`.
+
+### redirects (Array)
+
+In order to redirect visits to a certain path to a different one (or even an external URL), you can use this option:
+
+```json
+{
+  "redirects": [
+    { "source": "/from", "destination": "/to" },
+    { "source": "/old-pages/**", "destination": "/home" }
+  ]
+}
+```
+
+By default, all of them are performed with the status code [301](https://en.wikipedia.org/wiki/HTTP_301), but this behavior can be adjusted by setting the `type` property directly on the object (see below).
+
+Just like with [rewrites](#), you can also use routing segments:
+
+```json
+{
+  "redirects": [
+    { "source": "/old-docs/:id", "destination": "/new-docs/:id" },
+    { "source": "/old", "destination": "/new", "type": 302 }
+  ]
+}
+```
+
+In the example above, `/old-docs/12` would be forwarded to `/new-docs/12` with status code [301](https://en.wikipedia.org/wiki/HTTP_301). In addition `/old` would be forwarded to `/new` with status code [302](https://en.wikipedia.org/wiki/HTTP_302).
+
+### headers (Array)
+
+Allows you to set custom headers (and overwrite the default ones) for certain paths:
+
+```json
+{
+  "headers": [
+    {
+      "source" : "**/*.@(jpg|jpeg|gif|png)",
+      "headers" : [{
+        "key" : "Cache-Control",
+        "value" : "max-age=7200"
+      }]
+    }, {
+      "source" : "404.html",
+      "headers" : [{
+        "key" : "Cache-Control",
+        "value" : "max-age=300"
+      }]
+    }]
+  }
+}
+```
+
+### trailingSlash (Boolean)
+
+By default, the package will try to make assumptions for when to add trailing slashes to your URLs or not. If you want to remove them, set this property to `false` and `true` if you want to force them on all URLs:
+
+```js
+{
+  "trailingSlash": true
+}
+```
+
+With the above config, a request to `/test` would now result in a [301](https://en.wikipedia.org/wiki/HTTP_301) redirect to `/test/`.
+
+## Middleware
+
+If you want to replace the methods the package is using for interacting with the file system, you can pass them as the fourth argument to the function call.
+
+This comes in handy if you're dealing with simulating a file system, for example.
+
+These are the methods used by the package (they can all return a `Promise` or be asynchronous):
 
 ```js
 await handler(request, response, null, {
-	createReadStream(path) {},
-	stat(path) {}
+  createReadStream(path) {},
+  stat(path) {}
 });
 ```
 
