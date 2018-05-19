@@ -45,6 +45,13 @@ await handler(request, response, {
 
 You can use any of the following options:
 
+- [public](#public-boolean) (set sub directory to serve)
+- [cleanUrls](#cleanurls-booleanarray) (strip `.html` and `.htm` from paths)
+- [rewrites](#rewrites-array) (rewrite paths to different paths)
+- [redirects](#redirects-array) (forward paths to different paths or URLs)
+- [headers](#headers-array) (set custom headers)
+- [trailingSlash](#trailingslash-boolean) (remove or add trailing slashes to all paths)
+
 ### public (Boolean)
 
 By default, the current working directory will be served. If you only want to serve a specific path, you can use this options to pass a custom directory to be served relative to the current working directory.
@@ -122,7 +129,7 @@ In order to redirect visits to a certain path to a different one (or even an ext
 
 By default, all of them are performed with the status code [301](https://en.wikipedia.org/wiki/HTTP_301), but this behavior can be adjusted by setting the `type` property directly on the object (see below).
 
-Just like with [rewrites](#), you can also use routing segments:
+Just like with [rewrites](#rewrites-array), you can also use routing segments:
 
 ```json
 {
