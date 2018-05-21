@@ -17,6 +17,10 @@
   ],
   "author": "leo",
   "license": "MIT",
+  "files": [
+    "./src",
+    "./views/*.js"
+  ],
   "devDependencies": {
     "@zeit/eslint-config-node": "0.2.13",
     "@zeit/git-hooks": "0.1.4",
