@@ -6,7 +6,8 @@
   "scripts": {
     "test": "yarn run lint",
     "lint": "zeit-eslint --ext .jsx,.js .",
-    "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint"
+    "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint",
+    "build-views": "dottojs -s ./views -d ./views"
   },
   "repository": "zeit/serve-handler",
   "keywords": [
@@ -19,6 +20,8 @@
   "devDependencies": {
     "@zeit/eslint-config-node": "0.2.13",
     "@zeit/git-hooks": "0.1.4",
+    "commander": "2.15.1",
+    "dot": "1.1.2",
     "eslint": "4.19.1"
   },
   "eslintConfig": {
