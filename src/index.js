@@ -9,6 +9,9 @@ const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');
 const mime = require('mime/lite');
 
+// Other
+const template = require('../views/directory.js');
+
 const getHandlers = methods => {
 	const {stat, createReadStream} = fs;
 
@@ -313,6 +316,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return;
 	}
 
+
 	response.statusCode = 200;
-	response.end('Directory');
+	response.end(template({directory: 'mask'}));
 };
