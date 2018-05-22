@@ -201,8 +201,10 @@
       <ul id="files">
         {{~it.files :value:index}}
           <li>
-            <a href="/{{=value.relative}}" title="{{=value.title}}" class="{{=value.ext}}">{{=value.base}}</a>
-            <i>{{=value.size}}</i>
+            <a href="{{=value.relative}}" title="{{=value.title}}" class="{{=value.ext}}">{{=value.base}}</a>
+			{{? value.size}}
+				<i>{{=value.size}}</i>
+			{{?}}
           </li>
         {{~}}
       </ul>

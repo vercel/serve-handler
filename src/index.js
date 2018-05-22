@@ -8,16 +8,18 @@ const slasher = require('glob-slasher');
 const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');
 const mime = require('mime/lite');
+const bytes = require('bytes');
 
 // Other
 const template = require('../views/directory.js');
 
 const getHandlers = methods => {
-	const {stat, createReadStream} = fs;
+	const {stat, createReadStream, readdir} = fs;
 
 	return Object.assign({
 		stat,
-		createReadStream
+		createReadStream,
+		readdir
 	}, methods);
 };
 
@@ -157,7 +159,7 @@ const appendHeaders = (target, source) => {
 	}
 };
 
-const getHeaders = async (handlers, customHeaders = [], relativePath, stats) => {
+const getHeaders = async (customHeaders = [], relativePath, stats) => {
 	const related = {};
 
 	if (customHeaders.length > 0) {
@@ -248,6 +250,97 @@ const findRelated = async (current, relativePath, stat, extension = '.html') => 
 	return null;
 };
 
+const renderDirectory = async (current, relativePath, absolutePath, {readdir, stat}) => {
+	let files = await readdir(absolutePath);
+
+	for (const file of files) {
+		const filePath = path.resolve(absolutePath, file);
+		const details = path.parse(filePath);
+		const stats = await stat(filePath);
+
+		details.relative = path.join(relativePath, details.base);
+
+		if (stats.isDirectory()) {
+			details.base += '/';
+		} else {
+			details.ext = details.ext.split('.')[1] || 'txt';
+			details.size = bytes(stats.size);
+		}
+
+		details.title = details.base;
+		files[files.indexOf(file)] = details;
+	}
+
+	const directory = path.join(path.basename(current), relativePath, '/');
+	const pathParts = directory.split(path.sep);
+
+	// Sort to list directories first, then sort alphabetically
+	files = files.sort((a, b) => {
+		const aIsDir = a.base.endsWith('/');
+		const bIsDir = b.base.endsWith('/');
+
+		if (aIsDir && !bIsDir) {
+			return -1;
+		}
+
+		if (bIsDir && !aIsDir) {
+			return 1;
+		}
+
+		if (a.base > b.base) {
+			return 1;
+		}
+
+		if (a.base < b.base) {
+			return -1;
+		}
+
+		return 0;
+	});
+
+	// Add parent directory to the head of the sorted files array
+	if (absolutePath.indexOf(`${current}/`) > -1) {
+		const directoryPath = [...pathParts];
+		directoryPath.shift();
+
+		files.unshift({
+			base: '..',
+			relative: path.join(...directoryPath, '..'),
+			title: path.join(...pathParts.slice(0, -2), '/')
+		});
+	}
+
+	const paths = [];
+	pathParts.pop();
+
+	for (const part in pathParts) {
+		if (!{}.hasOwnProperty.call(pathParts, part)) {
+			continue;
+		}
+
+		let before = 0;
+		const parents = [];
+
+		while (before <= part) {
+			parents.push(pathParts[before]);
+			before++;
+		}
+
+		parents.shift();
+
+		paths.push({
+			name: pathParts[part],
+			url: parents.join('/')
+		});
+	}
+
+	return template({
+		files,
+		directory,
+		paths
+	});
+};
+
 module.exports = async (request, response, config = {}, methods = {}) => {
 	const cwd = process.cwd();
 	const current = config.public ? path.join(cwd, config.public) : cwd;
@@ -307,7 +400,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
-	const headers = await getHeaders(handlers, config.headers, relativePath, stats);
+	const headers = await getHeaders(config.headers, relativePath, stats);
 
 	if (stats.isFile()) {
 		response.writeHead(200, headers);
@@ -316,7 +409,17 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return;
 	}
 
+	let directory = null;
+
+	try {
+		directory = await renderDirectory(current, relativePath, absolutePath, handlers);
+	} catch (err) {
+		response.statusCode = 500;
+		response.end(err.message);
+
+		return;
+	}
 
 	response.statusCode = 200;
-	response.end(template({directory: 'mask'}));
+	response.end(directory);
 };

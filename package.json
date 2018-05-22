@@ -37,6 +37,7 @@
     "pre-commit": "lint-staged"
   },
   "dependencies": {
+    "bytes": "3.0.0",
     "fast-url-parser": "1.1.3",
     "fs-extra": "6.0.1",
     "glob-slasher": "1.0.1",
