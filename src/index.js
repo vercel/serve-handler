@@ -250,13 +250,17 @@ const findRelated = async (current, relativePath, stat, extension = '.html') => 
 	return null;
 };
 
-const renderDirectory = async (current, relativePath, absolutePath, {readdir, stat}) => {
-	let files = await readdir(absolutePath);
+const renderDirectory = async (current, relativePath, absolutePath, handlers, config) => {
+	if (!applicable(relativePath, config.directoryListing, false)) {
+		return null;
+	}
+
+	let files = await handlers.readdir(absolutePath);
 
 	for (const file of files) {
 		const filePath = path.resolve(absolutePath, file);
 		const details = path.parse(filePath);
-		const stats = await stat(filePath);
+		const stats = await handlers.stat(filePath);
 
 		details.relative = path.join(relativePath, details.base);
 
@@ -409,19 +413,10 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return;
 	}
 
-	const canList = applicable(decodedPath, config.directoryListing, false);
-
-	if (!canList) {
-		response.statusCode = 404;
-		response.end('Not Found');
-
-		return;
-	}
-
 	let directory = null;
 
 	try {
-		directory = await renderDirectory(current, relativePath, absolutePath, handlers);
+		directory = await renderDirectory(current, relativePath, absolutePath, handlers, config);
 	} catch (err) {
 		response.statusCode = 500;
 		response.end(err.message);
@@ -429,6 +424,6 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return;
 	}
 
-	response.statusCode = 200;
-	response.end(directory);
+	response.statusCode = directory ? 200 : 404;
+	response.end(directory || 'Not Found');
 };
