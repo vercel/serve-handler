@@ -7,7 +7,7 @@
     "test": "yarn run lint",
     "lint": "zeit-eslint --ext .jsx,.js .",
     "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint",
-    "build-views": "dottojs -s ./views -d ./views"
+    "build-views": "dottojs -s ./src -d ./src"
   },
   "repository": "zeit/serve-handler",
   "keywords": [
@@ -18,8 +18,7 @@
   "author": "leo",
   "license": "MIT",
   "files": [
-    "./src",
-    "./views/*.js"
+    "./src/*.js"
   ],
   "devDependencies": {
     "@zeit/eslint-config-node": "0.2.13",
