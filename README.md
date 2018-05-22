@@ -50,6 +50,7 @@ You can use any of the following options:
 - [rewrites](#rewrites-array) (rewrite paths to different paths)
 - [redirects](#redirects-array) (forward paths to different paths or URLs)
 - [headers](#headers-array) (set custom headers)
+- [directoryListing](#trailingslash-boolean) (disable directory listing or restrict it to certain paths)
 - [trailingSlash](#trailingslash-boolean) (remove or add trailing slashes to all paths)
 
 ### public (Boolean)
@@ -166,6 +167,21 @@ Allows you to set custom headers (and overwrite the default ones) for certain pa
 }
 ```
 
+### directoryListing (Boolean|Array)
+
+For paths are not files, but directories, the package will automatically render a good-looking list of all the files and directories contained inside that directory.
+
+If you'd like to disable this for all paths, set this option to `false`. Furthermore, you can also restrict it to certain directory paths if you want:
+
+```json
+{
+  "directoryListing": [
+    "/assets/**",
+    "/!assets/private"
+  ]
+}
+```
+
 ### trailingSlash (Boolean)
 
 By default, the package will try to make assumptions for when to add trailing slashes to your URLs or not. If you want to remove them, set this property to `false` and `true` if you want to force them on all URLs:
@@ -188,8 +204,9 @@ These are the methods used by the package (they can all return a `Promise` or be
 
 ```js
 await handler(request, response, null, {
+  stat(path) {},
   createReadStream(path) {},
-  stat(path) {}
+  readdir(path) {}
 });
 ```
 
