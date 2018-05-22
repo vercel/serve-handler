@@ -7,7 +7,8 @@
     "test": "yarn run lint",
     "lint": "zeit-eslint --ext .jsx,.js .",
     "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint",
-    "build-views": "dottojs -s ./src -d ./src"
+    "build-views": "dottojs -s ./src -d ./src",
+    "prepublish": "yarn run build-views"
   },
   "repository": "zeit/serve-handler",
   "keywords": [
