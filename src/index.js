@@ -264,7 +264,7 @@ const renderDirectory = async (current, relativePath, absolutePath, {readdir, st
 			details.base += '/';
 		} else {
 			details.ext = details.ext.split('.')[1] || 'txt';
-			details.size = bytes(stats.size);
+			details.size = bytes(stats.size, {unitSeparator: ' '});
 		}
 
 		details.title = details.base;
