@@ -11,7 +11,7 @@ const mime = require('mime/lite');
 const bytes = require('bytes');
 
 // Other
-const template = require('../views/directory.js');
+const template = require('./directory.js');
 
 const getHandlers = methods => {
 	const {stat, createReadStream, readdir} = fs;
