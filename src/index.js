@@ -184,16 +184,16 @@ const getHeaders = async (customHeaders = [], relativePath, stats) => {
 	return Object.assign(defaultHeaders, related);
 };
 
-const applicableForCleanUrl = (decodedPath, cleanUrls) => {
-	let matches = false;
+const applicable = (decodedPath, configEntry, negative) => {
+	let matches = negative ? false : true;
 
-	if (typeof cleanUrls !== 'undefined') {
-		matches = (cleanUrls === true);
+	if (typeof configEntry !== 'undefined') {
+		matches = (configEntry === !negative);
 
-		if (!matches && Array.isArray(cleanUrls)) {
+		if (!matches && Array.isArray(configEntry)) {
 			// This is much faster than `.some`
-			for (let index = 0; index < cleanUrls.length; index++) {
-				const source = cleanUrls[index];
+			for (let index = 0; index < configEntry.length; index++) {
+				const source = configEntry[index];
 
 				if (sourceMatches(source, decodedPath)) {
 					matches = true;
@@ -347,7 +347,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const handlers = getHandlers(methods);
 
 	const decodedPath = decodeURIComponent(url.parse(request.url).pathname);
-	const cleanUrl = applicableForCleanUrl(decodedPath, config.cleanUrls);
+	const cleanUrl = applicable(decodedPath, config.cleanUrls, true);
 	const redirect = shouldRedirect(decodedPath, config, cleanUrl);
 
 	if (redirect) {
@@ -405,6 +405,15 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	if (stats.isFile()) {
 		response.writeHead(200, headers);
 		handlers.createReadStream(absolutePath).pipe(response);
+
+		return;
+	}
+
+	const canList = applicable(decodedPath, config.directoryListing, false);
+
+	if (!canList) {
+		response.statusCode = 404;
+		response.end('Not Found');
 
 		return;
 	}
