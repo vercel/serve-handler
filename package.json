@@ -33,6 +33,9 @@
       "@zeit/eslint-config-node"
     ]
   },
+  "eslintIgnore": [
+    "directory.js"
+  ],
   "git": {
     "pre-commit": "lint-staged"
   },
