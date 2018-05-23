@@ -105,14 +105,15 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 	}
 
 	if (typeof trailingSlash === 'boolean') {
-		const {ext} = path.parse(decodedPath);
+		const {ext, name} = path.parse(decodedPath);
 		const isTrailed = decodedPath.endsWith('/');
+		const isDotfile = name.startsWith('.');
 
 		let target = null;
 
 		if (!trailingSlash && isTrailed) {
 			target = decodedPath.slice(0, -1);
-		} else if (trailingSlash && !isTrailed && !ext) {
+		} else if (trailingSlash && !isTrailed && !ext && !isDotfile) {
 			target = `${decodedPath}/`;
 		}
 
