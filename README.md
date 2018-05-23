@@ -1,7 +1,7 @@
 # serve-handler
 
 [![Build Status](https://circleci.com/gh/zeit/serve-handler.svg?&style=shield&circle-token=75e1ee77692419df0d17174ce5c7b5fe2d2a78a6)](https://circleci.com/gh/zeit/serve-handler)
-[![Join the community on Spectrum](https://withspectrum.github.io/badge/badge.svg)](https://spectrum.chat/micro/serve)
+[![Join the community on Spectrum](https://withspectrum.github.io/badge/badge.svg)](https://spectrum.chat/micro/serve) [![Greenkeeper badge](https://badges.greenkeeper.io/zeit/serve-handler.svg?token=69eca7e01a55b4a34f44b09a9105466c8bd23bfaa29d75f92a9b6dd1829af4d3&ts=1527112129864)](https://greenkeeper.io/)
 
 This package represents the core of [serve](https://github.com/zeit/serve) and static deployments running on [Now](https://zeit.co/now). It can be plugged into any HTTP server and is responsible for routing requests and handling responses.
 
