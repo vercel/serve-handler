@@ -400,9 +400,9 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		response.end();
 	}
 
-	const relativePath = applyRewrites(decodedPath, config.rewrites);
-
+	let relativePath = applyRewrites(decodedPath, config.rewrites);
 	let absolutePath = path.join(current, relativePath);
+
 	let stats = null;
 
 	try {
@@ -416,52 +416,74 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
-	if (!stats || stats.isDirectory()) {
-		if (cleanUrl) {
-			try {
-				const related = await findRelated(current, relativePath, handlers.stat);
+	if ((!stats || stats.isDirectory()) && cleanUrl) {
+		try {
+			const related = await findRelated(current, relativePath, handlers.stat);
 
-				if (related) {
-					({stats, absolutePath} = related);
-				}
-			} catch (err) {
-				if (err.code !== 'ENOENT') {
-					response.statusCode = 500;
-					response.end(err.message);
+			if (related) {
+				({stats, absolutePath} = related);
+			}
+		} catch (err) {
+			if (err.code !== 'ENOENT') {
+				response.statusCode = 500;
+				response.end(err.message);
 
-					return;
-				}
+				return;
+			}
+		}
+	}
+
+	if (stats && stats.isDirectory()) {
+		let directory = null;
+
+		try {
+			directory = await renderDirectory(current, relativePath, absolutePath, handlers, config);
+		} catch (err) {
+			response.statusCode = 500;
+			response.end(err.message);
+
+			return;
+		}
+
+		if (directory) {
+			response.statusCode = 200;
+			response.end(directory);
+
+			return;
+		}
+
+		// The directory listing is disabled, so we want to
+		// render a 404 error.
+		stats = null;
+	}
+
+	if (!stats) {
+		response.statusCode = 404;
+
+		const errorPage = '404.html';
+		const errorPageFull = path.join(current, errorPage);
+
+		try {
+			stats = await handlers.stat(errorPage);
+		} catch (err) {
+			if (err.code !== 'ENOENT') {
+				response.statusCode = 500;
+				response.end(err.message);
+
+				return;
 			}
 		}
 
 		if (!stats) {
-			response.statusCode = 404;
 			response.end('Not Found');
-
 			return;
 		}
+		absolutePath = errorPageFull;
+		relativePath = errorPage;
 	}
 
 	const headers = await getHeaders(config.headers, relativePath, stats);
 
-	if (stats.isFile()) {
-		response.writeHead(200, headers);
-		handlers.createReadStream(absolutePath).pipe(response);
-
-		return;
-	}
-
-	let directory = null;
-
-	try {
-		directory = await renderDirectory(current, relativePath, absolutePath, handlers, config);
-	} catch (err) {
-		response.statusCode = 500;
-		response.end(err.message);
-
-		return;
-	}
-
-	response.statusCode = directory ? 200 : 404;
-	response.end(directory || 'Not Found');
+	response.writeHead(200, headers);
+	handlers.createReadStream(absolutePath).pipe(response);
 };
