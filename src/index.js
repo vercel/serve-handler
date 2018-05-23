@@ -478,6 +478,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			response.end('Not Found');
 			return;
 		}
+
 		absolutePath = errorPageFull;
 		relativePath = errorPage;
 	}
