@@ -50,7 +50,8 @@ You can use any of the following options:
 - [rewrites](#rewrites-array) (rewrite paths to different paths)
 - [redirects](#redirects-array) (forward paths to different paths or URLs)
 - [headers](#headers-array) (set custom headers)
-- [directoryListing](#trailingslash-boolean) (disable directory listing or restrict it to certain paths)
+- [directoryListing](#directorylisting-booleanarray) (disable directory listing or restrict it to certain paths)
+- [unlisted](#unlisted-array) (exclude paths from the directory listing)
 - [trailingSlash](#trailingslash-boolean) (remove or add trailing slashes to all paths)
 
 ### public (Boolean)
@@ -181,6 +182,23 @@ If you'd like to disable this for all paths, set this option to `false`. Further
   ]
 }
 ```
+
+### unlisted (Array)
+
+In certain cases, you might not want a file or directory to appear in the directory listing. In these situations, there are two ways of solving this problem.
+
+Either you disable the directory listing entirely (like shown [here](#directorylisting-booleanarray)), or you exclude certain paths from those listings by adding them all to this config property.
+
+```json
+{
+  "unlisted": [
+    ".DS_Store",
+    ".git"
+  ]
+}
+```
+
+The items shown above are excluded from the directory listing by default.
 
 ### trailingSlash (Boolean)
 
