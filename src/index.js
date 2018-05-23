@@ -252,7 +252,7 @@ const findRelated = async (current, relativePath, stat, extension = '.html') => 
 
 const renderDirectory = async (current, relativePath, absolutePath, handlers, config) => {
 	const {directoryListing, trailingSlash} = config;
-	const slashSuffix = trailingSlash === true ? '/' : '';
+	const slashSuffix = typeof trailingSlash === 'boolean' ? (trailingSlash ? '/' : '') : '/';
 
 	if (!applicable(relativePath, directoryListing, false)) {
 		return null;
@@ -281,8 +281,9 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 		files[files.indexOf(file)] = details;
 	}
 
-	const directory = path.join(path.basename(current), relativePath, '/');
-	const pathParts = directory.split(path.sep);
+	const toRoot = path.relative(current, absolutePath);
+	const directory = path.join(path.basename(current), toRoot, slashSuffix);
+	const pathParts = directory.split(path.sep).filter(Boolean);
 
 	// Sort to list directories first, then sort alphabetically
 	files = files.sort((a, b) => {
@@ -309,8 +310,6 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 	});
 
 	// Add parent directory to the head of the sorted files array
-	const toRoot = path.relative(absolutePath, current);
-
 	if (toRoot.length > 0) {
 		const directoryPath = [...pathParts].slice(1);
 		const relative = path.join('/', ...directoryPath, '..', slashSuffix);
@@ -323,17 +322,14 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 	}
 
 	const paths = [];
-	pathParts.pop();
 
-	for (const part in pathParts) {
-		if (!{}.hasOwnProperty.call(pathParts, part)) {
-			continue;
-		}
+	for (let index = 0; index < pathParts.length; index++) {
+		const parents = [];
+		const isLast = index === (pathParts.length - 1);
 
 		let before = 0;
-		const parents = [];
 
-		while (before <= part) {
+		while (before <= index) {
 			parents.push(pathParts[before]);
 			before++;
 		}
@@ -341,8 +337,8 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 		parents.shift();
 
 		paths.push({
-			name: pathParts[part],
-			url: parents.join('/')
+			name: pathParts[index] + (isLast ? slashSuffix : '/'),
+			url: index === 0 ? '' : parents.join('/') + slashSuffix
 		});
 	}
 
