@@ -251,7 +251,10 @@ const findRelated = async (current, relativePath, stat, extension = '.html') => 
 };
 
 const renderDirectory = async (current, relativePath, absolutePath, handlers, config) => {
-	if (!applicable(relativePath, config.directoryListing, false)) {
+	const {directoryListing, trailingSlash} = config;
+	const slashSuffix = trailingSlash === true ? '/' : '';
+
+	if (!applicable(relativePath, directoryListing, false)) {
 		return null;
 	}
 
@@ -265,7 +268,10 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 		details.relative = path.join(relativePath, details.base);
 
 		if (stats.isDirectory()) {
-			details.base += '/';
+			details.base += slashSuffix;
+			details.relative += slashSuffix;
+
+			details.isDirectory = true;
 		} else {
 			details.ext = details.ext.split('.')[1] || 'txt';
 			details.size = bytes(stats.size, {unitSeparator: ' '});
@@ -280,8 +286,8 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 
 	// Sort to list directories first, then sort alphabetically
 	files = files.sort((a, b) => {
-		const aIsDir = a.base.endsWith('/');
-		const bIsDir = b.base.endsWith('/');
+		const aIsDir = a.isDirectory;
+		const bIsDir = b.isDirectory;
 
 		if (aIsDir && !bIsDir) {
 			return -1;
@@ -303,14 +309,16 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 	});
 
 	// Add parent directory to the head of the sorted files array
-	if (absolutePath.indexOf(`${current}/`) > -1) {
-		const directoryPath = [...pathParts];
-		directoryPath.shift();
+	const toRoot = path.relative(absolutePath, current);
+
+	if (toRoot.length > 0) {
+		const directoryPath = [...pathParts].slice(1);
+		const relative = path.join('/', ...directoryPath, '..', slashSuffix);
 
 		files.unshift({
 			base: '..',
-			relative: path.join(...directoryPath, '..'),
-			title: path.join(...pathParts.slice(0, -2), '/')
+			relative,
+			title: relative
 		});
 	}
 
