@@ -267,9 +267,10 @@ const canBeListed = (excluded, file) => {
 	return whether;
 };
 
-const renderDirectory = async (current, relativePath, absolutePath, handlers, config) => {
+const renderDirectory = async (current, acceptsJSON, handlers, config, paths) => {
 	const {directoryListing, trailingSlash, unlisted = []} = config;
 	const slashSuffix = typeof trailingSlash === 'boolean' ? (trailingSlash ? '/' : '') : '/';
+	const {relativePath, absolutePath} = paths;
 
 	const excluded = [
 		'.DS_Store',
@@ -296,7 +297,10 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 			details.base += slashSuffix;
 			details.relative += slashSuffix;
 
-			details.isDirectory = true;
+			// This is not camelcase, as we might be sending
+			// the data away as JSON later, which shouldn't contain
+			// any camelcased keys.
+			details['is-directory'] = true;
 		} else {
 			details.ext = details.ext.split('.')[1] || 'txt';
 
@@ -321,8 +325,8 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 
 	// Sort to list directories first, then sort alphabetically
 	files = files.sort((a, b) => {
-		const aIsDir = a.isDirectory;
-		const bIsDir = b.isDirectory;
+		const aIsDir = a['is-directory'];
+		const bIsDir = b['is-directory'];
 
 		if (aIsDir && !bIsDir) {
 			return -1;
@@ -355,7 +359,7 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 		});
 	}
 
-	const paths = [];
+	const subPaths = [];
 
 	for (let index = 0; index < pathParts.length; index++) {
 		const parents = [];
@@ -370,17 +374,23 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 
 		parents.shift();
 
-		paths.push({
+		subPaths.push({
 			name: pathParts[index] + (isLast ? slashSuffix : '/'),
 			url: index === 0 ? '' : parents.join('/') + slashSuffix
 		});
 	}
 
-	return template({
+	const spec = {
 		files,
 		directory,
-		paths
-	});
+		paths: subPaths
+	};
+
+	if (acceptsJSON) {
+		return JSON.stringify(spec);
+	}
+
+	return template(spec);
 };
 
 module.exports = async (request, response, config = {}, methods = {}) => {
@@ -433,11 +443,20 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
+	const acceptsJSON = request.headers.accept.includes('application/json');
+
+	if (((stats && stats.isDirectory()) || !stats) && acceptsJSON) {
+		response.setHeader('Content-Type', 'application/json');
+	}
+
 	if (stats && stats.isDirectory()) {
 		let directory = null;
 
 		try {
-			directory = await renderDirectory(current, relativePath, absolutePath, handlers, config);
+			directory = await renderDirectory(current, acceptsJSON, handlers, config, {
+				relativePath,
+				absolutePath
+			});
 		} catch (err) {
 			response.statusCode = 500;
 			response.end(err.message);
@@ -459,6 +478,17 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (!stats) {
 		response.statusCode = 404;
+
+		if (acceptsJSON) {
+			response.end(JSON.stringify({
+				error: {
+					code: 'not_found',
+					message: 'Not Found'
+				}
+			}));
+
+			return;
+		}
 
 		const errorPage = '404.html';
 		const errorPageFull = path.join(current, errorPage);
