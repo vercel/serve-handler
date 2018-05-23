@@ -299,7 +299,11 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 			details.isDirectory = true;
 		} else {
 			details.ext = details.ext.split('.')[1] || 'txt';
-			details.size = bytes(stats.size, {unitSeparator: ' '});
+
+			details.size = bytes(stats.size, {
+				unitSeparator: ' ',
+				decimalPlaces: 0
+			});
 		}
 
 		details.title = details.base;
