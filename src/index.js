@@ -408,6 +408,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		});
 
 		response.end();
+		return;
 	}
 
 	let relativePath = applyRewrites(decodedPath, config.rewrites);
