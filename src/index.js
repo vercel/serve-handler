@@ -251,9 +251,31 @@ const findRelated = async (current, relativePath, stat, extension = '.html') => 
 	return null;
 };
 
+const canBeListed = (excluded, file) => {
+	const slashed = slasher(file);
+	let whether = true;
+
+	for (let mark = 0; mark < excluded.length; mark++) {
+		const source = excluded[mark];
+
+		if (sourceMatches(source, slashed)) {
+			whether = false;
+			break;
+		}
+	}
+
+	return whether;
+};
+
 const renderDirectory = async (current, relativePath, absolutePath, handlers, config) => {
-	const {directoryListing, trailingSlash} = config;
+	const {directoryListing, trailingSlash, unlisted = []} = config;
 	const slashSuffix = typeof trailingSlash === 'boolean' ? (trailingSlash ? '/' : '') : '/';
+
+	const excluded = [
+		'.DS_Store',
+		'.git',
+		...unlisted
+	];
 
 	if (!applicable(relativePath, directoryListing, false)) {
 		return null;
@@ -261,7 +283,9 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 
 	let files = await handlers.readdir(absolutePath);
 
-	for (const file of files) {
+	for (let index = 0; index < files.length; index++) {
+		const file = files[index];
+
 		const filePath = path.resolve(absolutePath, file);
 		const details = path.parse(filePath);
 		const stats = await handlers.stat(filePath);
@@ -279,7 +303,12 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 		}
 
 		details.title = details.base;
-		files[files.indexOf(file)] = details;
+
+		if (canBeListed(excluded, file)) {
+			files[index] = details;
+		} else {
+			delete files[index];
+		}
 	}
 
 	const toRoot = path.relative(current, absolutePath);
@@ -308,7 +337,7 @@ const renderDirectory = async (current, relativePath, absolutePath, handlers, co
 		}
 
 		return 0;
-	});
+	}).filter(Boolean);
 
 	// Add parent directory to the head of the sorted files array
 	if (toRoot.length > 0) {
