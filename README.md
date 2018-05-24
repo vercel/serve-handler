@@ -22,7 +22,7 @@ You can also use [npm](https://www.npmjs.com/) instead, if you'd like:
 npm install serve-handler
 ```
 
-Next, add it to your HTTP server. Here's an example with [micro](https://github.com/zeit/micro):
+Next, add it to your HTTP server. Here's an example using [micro](https://github.com/zeit/micro):
 
 ```js
 const handler = require('serve-handler');
