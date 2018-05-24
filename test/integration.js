@@ -148,33 +148,6 @@ test('render json file', async t => {
 	t.deepEqual(spec, content);
 });
 
-test('use `public` config property', async t => {
-	const name = 'src';
-	const url = await getUrl({'public': name});
-
-	const response = await fetch(url, {
-		headers: {
-			Accept: 'application/json'
-		}
-	});
-
-	const {files, directory} = await response.json();
-	t.is(directory, 'src/');
-
-	const type = response.headers.get('content-type');
-	t.is(type, 'application/json');
-
-	const related = path.join(process.cwd(), name);
-	const contents = await getDirectoryContents(related);
-
-	const existing = files.every(file => {
-		const full = file.base.replace('/', '');
-		return contents.includes(full);
-	});
-
-	t.true(existing);
-});
-
 test('set `trailingSlash` config property to `true`', async t => {
 	const url = await getUrl({
 		trailingSlash: true
@@ -518,6 +491,44 @@ test('set `cleanUrls` config property to `true`', async t => {
 	const text = await response.text();
 
 	t.is(content, text);
+});
+
+test('set `cleanUrls` config property to `true` and render `.htm` file', async t => {
+	const target = 'another-directory';
+	const index = path.join(fixturesFull, target, 'index.htm');
+
+	const url = await getUrl({
+		cleanUrls: true
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const content = await fs.readFile(index, 'utf8');
+	const text = await response.text();
+
+	t.is(content, text);
+});
+
+test('set `cleanUrls` config property to `true` and not index file found', async t => {
+	const contents = await getDirectoryContents();
+	const url = await getUrl({cleanUrls: true});
+
+	const response = await fetch(url, {
+		headers: {
+			Accept: 'application/json'
+		}
+	});
+
+	const type = response.headers.get('content-type');
+	t.is(type, 'application/json');
+
+	const {files} = await response.json();
+
+	const existing = files.every(file => {
+		const full = file.base.replace('/', '');
+		return contents.includes(full);
+	});
+
+	t.true(existing);
 });
 
 test('set `cleanUrls` config property to `true` and an error occurs', async t => {
