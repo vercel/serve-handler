@@ -11,7 +11,14 @@ const fs = require('fs-extra');
 // Utilities
 const handler = require('../');
 
-const getUrl = (config, handlers) => {
+const fixturesTarget = 'test/fixtures';
+const fixturesFull = path.join(process.cwd(), fixturesTarget);
+
+const getUrl = (customConfig, handlers) => {
+	const config = Object.assign({
+		'public': fixturesTarget
+	}, customConfig);
+
 	const server = micro(async (request, response) => {
 		await handler(request, response, config, handlers);
 	});
@@ -19,7 +26,7 @@ const getUrl = (config, handlers) => {
 	return listen(server);
 };
 
-const getDirectoryContents = async (location = process.cwd(), sub) => {
+const getDirectoryContents = async (location = fixturesFull, sub) => {
 	const excluded = [
 		'.DS_Store',
 		'.git'
@@ -71,9 +78,9 @@ test('render json directory listing', async t => {
 });
 
 test('render html sub directory listing', async t => {
-	const name = '.circleci';
+	const name = 'directory';
 
-	const sub = path.join(process.cwd(), name);
+	const sub = path.join(fixturesFull, name);
 	const contents = await getDirectoryContents(sub, true);
 	const url = await getUrl();
 	const response = await fetch(`${url}/${name}`);
@@ -86,9 +93,9 @@ test('render html sub directory listing', async t => {
 });
 
 test('render json sub directory listing', async t => {
-	const name = 'src';
+	const name = 'another-directory';
 
-	const sub = path.join(process.cwd(), name);
+	const sub = path.join(fixturesFull, name);
 	const contents = await getDirectoryContents(sub, true);
 	const url = await getUrl();
 
@@ -112,8 +119,8 @@ test('render json sub directory listing', async t => {
 });
 
 test('render dotfile', async t => {
-	const name = '.yarnrc';
-	const related = path.join(process.cwd(), name);
+	const name = '.dotfile';
+	const related = path.join(fixturesFull, name);
 
 	const content = await fs.readFile(related, 'utf8');
 	const url = await getUrl();
@@ -124,8 +131,8 @@ test('render dotfile', async t => {
 });
 
 test('render json file', async t => {
-	const name = 'package.json';
-	const related = path.join(process.cwd(), name);
+	const name = 'object.json';
+	const related = path.join(fixturesFull, name);
 
 	const content = await fs.readJSON(related);
 	const url = await getUrl();
@@ -200,8 +207,8 @@ test('set `trailingSlash` config property to `false`', async t => {
 });
 
 test('set `rewrites` config property to wildcard path', async t => {
-	const destination = '.yarnrc';
-	const related = path.join(process.cwd(), destination);
+	const destination = '.dotfile';
+	const related = path.join(fixturesFull, destination);
 	const content = await fs.readFile(related, 'utf8');
 
 	const url = await getUrl({
@@ -218,8 +225,8 @@ test('set `rewrites` config property to wildcard path', async t => {
 });
 
 test('set `rewrites` config property to one-star wildcard path', async t => {
-	const destination = '.yarnrc';
-	const related = path.join(process.cwd(), destination);
+	const destination = '.dotfile';
+	const related = path.join(fixturesFull, destination);
 	const content = await fs.readFile(related, 'utf8');
 
 	const url = await getUrl({
@@ -236,7 +243,7 @@ test('set `rewrites` config property to one-star wildcard path', async t => {
 });
 
 test('set `rewrites` config property to path segment', async t => {
-	const related = path.join(process.cwd(), 'package.json');
+	const related = path.join(fixturesFull, 'object.json');
 	const content = await fs.readJSON(related);
 
 	const url = await getUrl({
@@ -246,7 +253,7 @@ test('set `rewrites` config property to path segment', async t => {
 		}]
 	});
 
-	const response = await fetch(`${url}/face/package`);
+	const response = await fetch(`${url}/face/object`);
 	const json = await response.json();
 
 	t.deepEqual(json, content);
@@ -348,7 +355,7 @@ test('set `redirects` config property to wildcard path and `trailingSlash` to `f
 });
 
 test('pass custom handlers', async t => {
-	const name = '.yarnrc';
+	const name = '.dotfile';
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
@@ -358,7 +365,7 @@ test('pass custom handlers', async t => {
 
 	const response = await fetch(`${url}/${name}`);
 	const text = await response.text();
-	const content = await fs.readFile(path.join(process.cwd(), name), 'utf8');
+	const content = await fs.readFile(path.join(fixturesFull, name), 'utf8');
 
 	t.is(text, content);
 });
@@ -379,7 +386,7 @@ test('set `headers` to wildcard headers', async t => {
 		headers: list
 	});
 
-	const response = await fetch(`${url}/README.md`);
+	const response = await fetch(`${url}/docs.md`);
 	const cacheControl = response.headers.get(key);
 
 	t.is(cacheControl, value);
@@ -390,7 +397,7 @@ test('set `headers` to fixed headers and check default headers', async t => {
 	const value = 'max-age=7200';
 
 	const list = [{
-		source: 'package.json',
+		source: 'object.json',
 		headers: [{
 			key,
 			value
@@ -401,7 +408,7 @@ test('set `headers` to fixed headers and check default headers', async t => {
 		headers: list
 	});
 
-	const {headers} = await fetch(`${url}/package.json`);
+	const {headers} = await fetch(`${url}/object.json`);
 	const cacheControl = headers.get(key);
 	const type = headers.get('content-type');
 
