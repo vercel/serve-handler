@@ -332,11 +332,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 			return -1;
 		}
 
-		if (bIsDir && !aIsDir) {
-			return 1;
-		}
-
-		if (a.base > b.base) {
+		if ((bIsDir && !aIsDir) || (a.base > b.base)) {
 			return 1;
 		}
 
