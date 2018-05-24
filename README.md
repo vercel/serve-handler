@@ -46,14 +46,16 @@ await handler(request, response, {
 
 You can use any of the following options:
 
-- [public](#public-boolean) (set sub directory to serve)
-- [cleanUrls](#cleanurls-booleanarray) (strip `.html` and `.htm` from paths)
-- [rewrites](#rewrites-array) (rewrite paths to different paths)
-- [redirects](#redirects-array) (forward paths to different paths or URLs)
-- [headers](#headers-array) (set custom headers)
-- [directoryListing](#directorylisting-booleanarray) (disable directory listing or restrict it to certain paths)
-- [unlisted](#unlisted-array) (exclude paths from the directory listing)
-- [trailingSlash](#trailingslash-boolean) (remove or add trailing slashes to all paths)
+| Property                                             | Description                                               |
+|------------------------------------------------------|-----------------------------------------------------------|
+| [`public`](#public-boolean)                          | Set a sub directory to be served                          |
+| [`cleanUrls`](#cleanurls-booleanarray)               | Have `.html` and `.htm` extension stripped from paths     |
+| [`rewrites`](#rewrites-array)                        | Rewrite paths to different paths                          |
+| [`redirects`](#redirects-array)                      | Forward paths to different paths or external URLs         |
+| [`headers`](#headers-array)                          | Set custom headers for specific paths                     |
+| [`directoryListing`](#directorylisting-booleanarray) | Disable directory listing or restrict it to certain paths |
+| [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                  |
+| [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths               |
 
 ### public (Boolean)
 
