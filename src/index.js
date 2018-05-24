@@ -189,7 +189,7 @@ const applicable = (decodedPath, configEntry, negative) => {
 	let matches = negative ? false : true;
 
 	if (typeof configEntry !== 'undefined') {
-		matches = (configEntry === !negative);
+		matches = (configEntry === !matches);
 
 		if (!matches && Array.isArray(configEntry)) {
 			// This is much faster than `.some`
@@ -242,13 +242,7 @@ const findRelated = async (current, relativePath, stat, extension = '.html') => 
 
 	// At this point, no `.html` files have been found, so we
 	// need to check for the existance of `.htm` ones.
-	const relatedHTM = findRelated(current, relativePath, stat, '.htm');
-
-	if (relatedHTM) {
-		return relatedHTM;
-	}
-
-	return null;
+	return findRelated(current, relativePath, stat, '.htm');
 };
 
 const canBeListed = (excluded, file) => {
@@ -382,11 +376,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 		paths: subPaths
 	};
 
-	if (acceptsJSON) {
-		return JSON.stringify(spec);
-	}
-
-	return template(spec);
+	return acceptsJSON ? JSON.stringify(spec) : template(spec);
 };
 
 module.exports = async (request, response, config = {}, methods = {}) => {
