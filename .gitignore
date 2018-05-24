@@ -3,4 +3,4 @@ yarn-error.log
 package-lock.json
 src/directory.js
 .nyc_output
-coverage
+coverage.lcov
