@@ -4,8 +4,9 @@
   "description": "The routing foundation of `serve` and static deployments on Now",
   "main": "src/index.js",
   "scripts": {
-    "test": "yarn run lint",
-    "lint": "zeit-eslint --ext .jsx,.js .",
+    "test": "yarn run test-lint && yarn run test-integration",
+    "test-lint": "zeit-eslint --ext .jsx,.js .",
+    "test-integration": "ava test/integration.js --fail-fast",
     "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint",
     "build-views": "dottojs -s ./src -d ./src",
     "prepublish": "yarn run build-views"
@@ -24,9 +25,15 @@
   "devDependencies": {
     "@zeit/eslint-config-node": "0.2.13",
     "@zeit/git-hooks": "0.1.4",
+    "ava": "0.25.0",
     "commander": "2.15.1",
     "dot": "1.1.2",
-    "eslint": "4.19.1"
+    "eslint": "4.19.1",
+    "micro": "9.3.1",
+    "node-fetch": "2.1.2",
+    "request": "2.87.0",
+    "request-promise": "4.2.2",
+    "test-listen": "1.1.0"
   },
   "eslintConfig": {
     "extends": [

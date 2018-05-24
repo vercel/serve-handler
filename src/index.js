@@ -86,7 +86,9 @@ const applyRewrites = (requestPath, rewrites = []) => {
 };
 
 const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) => {
-	if (redirects.length === 0) {
+	const slashing = typeof trailingSlash === 'boolean';
+
+	if (redirects.length === 0 && !slashing) {
 		return null;
 	}
 
@@ -104,7 +106,7 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 		cleanedUrl = true;
 	}
 
-	if (typeof trailingSlash === 'boolean') {
+	if (slashing) {
 		const {ext, name} = path.parse(decodedPath);
 		const isTrailed = decodedPath.endsWith('/');
 		const isDotfile = name.startsWith('.');
@@ -430,7 +432,11 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
-	const acceptsJSON = request.headers.accept.includes('application/json');
+	let acceptsJSON = null;
+
+	if (request.headers.accept) {
+		acceptsJSON = request.headers.accept.includes('application/json');
+	}
 
 	if (((stats && stats.isDirectory()) || !stats) && acceptsJSON) {
 		response.setHeader('Content-Type', 'application/json');
@@ -453,8 +459,13 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 		if (directory) {
 			response.statusCode = 200;
-			response.end(directory);
 
+			// When JSON is accepted, we already set the header before
+			if (!response.getHeader('Content-Type')) {
+				response.setHeader('Content-Type', 'text/html; charset=utf-8');
+			}
+
+			response.end(directory);
 			return;
 		}
 
