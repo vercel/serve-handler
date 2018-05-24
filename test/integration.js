@@ -408,3 +408,30 @@ test('set `headers` to fixed headers and check default headers', async t => {
 	t.is(cacheControl, value);
 	t.is(type, 'application/json');
 });
+
+test('receive not found error', async t => {
+	const url = await getUrl();
+	const response = await fetch(`${url}/not-existing`);
+	const text = await response.text();
+
+	t.is(text, 'Not Found');
+});
+
+test('receive not found error as json', async t => {
+	const url = await getUrl();
+
+	const response = await fetch(`${url}/not-existing`, {
+		headers: {
+			Accept: 'application/json'
+		}
+	});
+
+	const json = await response.json();
+
+	t.deepEqual(json, {
+		error: {
+			code: 'not_found',
+			message: 'Not Found'
+		}
+	});
+});

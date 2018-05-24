@@ -41,6 +41,12 @@
       "@zeit/eslint-config-node"
     ]
   },
+  "nyc": {
+    "exclude": [
+      "src/directory.js",
+      "test/*"
+    ]
+  },
   "eslintIgnore": [
     "directory.js"
   ],
