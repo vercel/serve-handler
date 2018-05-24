@@ -221,7 +221,7 @@ This comes in handy if you're dealing with simulating a file system, for example
 These are the methods used by the package (they can all return a `Promise` or be asynchronous):
 
 ```js
-await handler(request, response, null, {
+await handler(request, response, undefined, {
   stat(path) {},
   createReadStream(path) {},
   readdir(path) {}

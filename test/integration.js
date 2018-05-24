@@ -11,9 +11,9 @@ const fs = require('fs-extra');
 // Utilities
 const handler = require('../');
 
-const getUrl = config => {
+const getUrl = (config, handlers) => {
 	const server = micro(async (request, response) => {
-		await handler(request, response, config);
+		await handler(request, response, config, handlers);
 	});
 
 	return listen(server);
@@ -199,7 +199,7 @@ test('set `trailingSlash` config property to `false`', async t => {
 	t.is(location, target);
 });
 
-test('set `rewrites` config property to wildcard paths', async t => {
+test('set `rewrites` config property to wildcard path', async t => {
 	const destination = '.yarnrc';
 	const related = path.join(process.cwd(), destination);
 	const content = await fs.readFile(related, 'utf8');
@@ -215,4 +215,196 @@ test('set `rewrites` config property to wildcard paths', async t => {
 	const text = await response.text();
 
 	t.is(text, content);
+});
+
+test('set `rewrites` config property to one-star wildcard path', async t => {
+	const destination = '.yarnrc';
+	const related = path.join(process.cwd(), destination);
+	const content = await fs.readFile(related, 'utf8');
+
+	const url = await getUrl({
+		rewrites: [{
+			source: 'face/*/mask',
+			destination
+		}]
+	});
+
+	const response = await fetch(`${url}/face/delete/mask`);
+	const text = await response.text();
+
+	t.is(text, content);
+});
+
+test('set `rewrites` config property to path segment', async t => {
+	const related = path.join(process.cwd(), 'package.json');
+	const content = await fs.readJSON(related);
+
+	const url = await getUrl({
+		rewrites: [{
+			source: 'face/:id',
+			destination: ':id.json'
+		}]
+	});
+
+	const response = await fetch(`${url}/face/package`);
+	const json = await response.json();
+
+	t.deepEqual(json, content);
+});
+
+test('set `redirects` config property to wildcard path', async t => {
+	const destination = 'testing';
+
+	const url = await getUrl({
+		redirects: [{
+			source: 'face/**',
+			destination
+		}]
+	 });
+
+	const response = await fetch(`${url}/face/mask`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url}/${destination}`);
+});
+
+test('set `redirects` config property to one-star wildcard path', async t => {
+	const destination = 'testing';
+
+	const url = await getUrl({
+		redirects: [{
+			source: 'face/*/ideal',
+			destination
+		}]
+	 });
+
+	const response = await fetch(`${url}/face/mask/ideal`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url}/${destination}`);
+});
+
+test('set `redirects` config property to path segment', async t => {
+	const url = await getUrl({
+		redirects: [{
+			source: 'face/:segment',
+			destination: 'mask/:segment'
+		}]
+	 });
+
+	const response = await fetch(`${url}/face/me`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url}/mask/me`);
+});
+
+test('set `redirects` config property to wildcard path and `trailingSlash` to `true`', async t => {
+	const target = '/face/mask';
+
+	const url = await getUrl({
+		trailingSlash: true,
+		redirects: [{
+			source: 'face/**',
+			destination: 'testing'
+		}]
+	 });
+
+	const response = await fetch(url + target, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url + target}/`);
+});
+
+test('set `redirects` config property to wildcard path and `trailingSlash` to `false`', async t => {
+	const target = '/face/mask';
+
+	const url = await getUrl({
+		trailingSlash: false,
+		redirects: [{
+			source: 'face/**',
+			destination: 'testing'
+		}]
+	 });
+
+	const response = await fetch(`${url + target}/`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, url + target);
+});
+
+test('pass custom handlers', async t => {
+	const name = '.yarnrc';
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: fs.stat,
+		createReadStream: fs.createReadStream
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+	const content = await fs.readFile(path.join(process.cwd(), name), 'utf8');
+
+	t.is(text, content);
+});
+
+test('set `headers` to wildcard headers', async t => {
+	const key = 'Cache-Control';
+	const value = 'max-age=7200';
+
+	const list = [{
+		source: '*.md',
+		headers: [{
+			key,
+			value
+		}]
+	}];
+
+	const url = await getUrl({
+		headers: list
+	});
+
+	const response = await fetch(`${url}/README.md`);
+	const cacheControl = response.headers.get(key);
+
+	t.is(cacheControl, value);
+});
+
+test('set `headers` to fixed headers and check default headers', async t => {
+	const key = 'Cache-Control';
+	const value = 'max-age=7200';
+
+	const list = [{
+		source: 'package.json',
+		headers: [{
+			key,
+			value
+		}]
+	}];
+
+	const url = await getUrl({
+		headers: list
+	});
+
+	const {headers} = await fetch(`${url}/package.json`);
+	const cacheControl = headers.get(key);
+	const type = headers.get('content-type');
+
+	t.is(cacheControl, value);
+	t.is(type, 'application/json');
 });
