@@ -1,6 +1,7 @@
 # serve-handler
 
-[![Build Status](https://circleci.com/gh/zeit/serve-handler.svg?&style=shield&circle-token=75e1ee77692419df0d17174ce5c7b5fe2d2a78a6)](https://circleci.com/gh/zeit/serve-handler)
+[![Build Status](https://circleci.com/gh/zeit/serve-handler.svg?&style=shield)](https://circleci.com/gh/zeit/serve-handler)
+[![Coverage Status](https://coveralls.io/repos/github/zeit/serve-handler/badge.svg?branch=master)](https://coveralls.io/github/zeit/serve-handler?branch=master)
 [![Join the community on Spectrum](https://withspectrum.github.io/badge/badge.svg)](https://spectrum.chat/micro/serve)
 
 This package represents the core of [serve](https://github.com/zeit/serve) and static deployments running on [Now](https://zeit.co/now). It can be plugged into any HTTP server and is responsible for routing requests and handling responses.
