@@ -219,8 +219,6 @@ With the above config, a request to `/test` would now result in a [301](https://
 
 If you want to replace the methods the package is using for interacting with the file system, you can pass them as the fourth argument to the function call.
 
-This comes in handy if you're dealing with simulating a file system, for example.
-
 These are the methods used by the package (they can all return a `Promise` or be asynchronous):
 
 ```js
@@ -231,7 +229,7 @@ await handler(request, response, undefined, {
 });
 ```
 
-## Real-World Use Cases
+## Use Cases
 
 There are two environments in which [ZEIT](https://zeit.co) uses this package:
 
