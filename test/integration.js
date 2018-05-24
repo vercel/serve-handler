@@ -164,6 +164,22 @@ test('set `trailingSlash` config property to `true`', async t => {
 	t.is(location, `${target}/`);
 });
 
+test('set `trailingSlash` config property to any boolean and remove multiple slashes', async t => {
+	const url = await getUrl({
+		trailingSlash: true
+	});
+
+	const target = `${url}/test/`;
+
+	const response = await fetch(`${target}//////`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, target);
+});
+
 test('set `trailingSlash` config property to `false`', async t => {
 	const url = await getUrl({
 		trailingSlash: false
@@ -250,6 +266,25 @@ test('set `redirects` config property to wildcard path', async t => {
 
 	const location = response.headers.get('location');
 	t.is(location, `${url}/${destination}`);
+});
+
+test('set `redirects` config property to wildcard path and do not match', async t => {
+	const destination = 'testing';
+
+	const url = await getUrl({
+		redirects: [{
+			source: 'face/**',
+			destination
+		}]
+	 });
+
+	const response = await fetch(`${url}/test/mask`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.falsy(location);
 });
 
 test('set `redirects` config property to one-star wildcard path', async t => {
@@ -491,6 +526,39 @@ test('set `cleanUrls` config property to `true`', async t => {
 	const text = await response.text();
 
 	t.is(content, text);
+});
+
+test('set `cleanUrls` config property to array', async t => {
+	const target = 'directory';
+	const index = path.join(fixturesFull, target, 'index.html');
+
+	const url = await getUrl({
+		cleanUrls: [
+			'/directory**'
+		]
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const content = await fs.readFile(index, 'utf8');
+	const text = await response.text();
+
+	t.is(content, text);
+});
+
+test('set `cleanUrls` config property to `true` and try with file', async t => {
+	const target = '/directory/clean-file';
+
+	const url = await getUrl({
+		cleanUrls: true
+	});
+
+	const response = await fetch(`${url}${target}.html`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url}${target}`);
 });
 
 test('set `cleanUrls` config property to `true` and render `.htm` file', async t => {

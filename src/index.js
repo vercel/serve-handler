@@ -88,7 +88,7 @@ const applyRewrites = (requestPath, rewrites = []) => {
 const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) => {
 	const slashing = typeof trailingSlash === 'boolean';
 
-	if (redirects.length === 0 && !slashing) {
+	if (redirects.length === 0 && !slashing && !cleanUrl) {
 		return null;
 	}
 
@@ -324,6 +324,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 		const aIsDir = a['is-directory'];
 		const bIsDir = b['is-directory'];
 
+		/* istanbul ignore next */
 		if (aIsDir && !bIsDir) {
 			return -1;
 		}
@@ -336,6 +337,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 			return -1;
 		}
 
+		/* istanbul ignore next */
 		return 0;
 	}).filter(Boolean);
 
