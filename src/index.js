@@ -274,7 +274,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 		...unlisted
 	];
 
-	if (!applicable(relativePath, directoryListing, false)) {
+	if (directoryListing === false || !applicable(relativePath, directoryListing, false)) {
 		return null;
 	}
 
@@ -492,7 +492,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		const errorPageFull = path.join(current, errorPage);
 
 		try {
-			stats = await handlers.stat(errorPage);
+			stats = await handlers.stat(errorPageFull);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
 				response.statusCode = 500;
@@ -513,6 +513,6 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	const headers = await getHeaders(config.headers, relativePath, stats);
 
-	response.writeHead(200, headers);
+	response.writeHead(response.statusCode || 200, headers);
 	handlers.createReadStream(absolutePath).pipe(response);
 };

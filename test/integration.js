@@ -26,10 +26,11 @@ const getUrl = (customConfig, handlers) => {
 	return listen(server);
 };
 
-const getDirectoryContents = async (location = fixturesFull, sub) => {
+const getDirectoryContents = async (location = fixturesFull, sub, exclude = []) => {
 	const excluded = [
 		'.DS_Store',
-		'.git'
+		'.git',
+		...exclude
 	];
 
 	const content = await fs.readdir(location);
@@ -417,7 +418,10 @@ test('set `headers` to fixed headers and check default headers', async t => {
 });
 
 test('receive not found error', async t => {
-	const url = await getUrl();
+	const url = await getUrl({
+		'public': path.join(fixturesFull, 'directory')
+	});
+
 	const response = await fetch(`${url}/not-existing`);
 	const text = await response.text();
 
@@ -442,3 +446,144 @@ test('receive not found error as json', async t => {
 		}
 	});
 });
+
+test('receive custom `404.html` error page', async t => {
+	const url = await getUrl();
+	const response = await fetch(`${url}/not-existing`);
+	const text = await response.text();
+
+	t.is(text.trim(), '<span>Not Found</span>');
+});
+
+test('receive error because reading `404.html` failed', async t => {
+	const message = 'This is an error';
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: location => {
+			if (path.basename(location) === '404.html') {
+				throw new Error(message);
+			}
+
+			return fs.stat(location);
+		}
+	});
+
+	const response = await fetch(`${url}/not-existing`);
+	const text = await response.text();
+
+	t.is(response.status, 500);
+	t.is(text, message);
+});
+
+test('disabled directory listing', async t => {
+	const url = await getUrl({
+		directoryListing: false
+	});
+
+	const response = await fetch(url);
+	const text = await response.text();
+
+	t.is(response.status, 404);
+	t.is(text.trim(), '<span>Not Found</span>');
+});
+
+test('listing the directory failed', async t => {
+	const message = 'This is an error';
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		readdir: () => {
+			throw new Error(message);
+		}
+	});
+
+	const response = await fetch(url);
+	const text = await response.text();
+
+	t.is(response.status, 500);
+	t.is(text, message);
+});
+
+test('set `cleanUrls` config property to `true`', async t => {
+	const target = 'directory';
+	const index = path.join(fixturesFull, target, 'index.html');
+
+	const url = await getUrl({
+		cleanUrls: true
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const content = await fs.readFile(index, 'utf8');
+	const text = await response.text();
+
+	t.is(content, text);
+});
+
+test('set `cleanUrls` config property to `true` and an error occurs', async t => {
+	const target = 'directory';
+	const message = 'This is an error';
+
+	const url = await getUrl({
+		cleanUrls: true
+	}, {
+		stat: location => {
+			if (path.basename(location) === 'index.html') {
+				throw new Error(message);
+			}
+
+			return fs.stat(location);
+		}
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const text = await response.text();
+
+	t.is(response.status, 500);
+	t.is(text, message);
+});
+
+test('error occurs while getting stat of path', async t => {
+	const message = 'This is an error';
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: () => {
+			throw new Error(message);
+		}
+	});
+
+	const response = await fetch(url);
+	const text = await response.text();
+
+	t.is(response.status, 500);
+	t.is(text, message);
+});
+
+test('set `unlisted` config property to array', async t => {
+	const unlisted = [
+		'directory'
+	];
+
+	const contents = await getDirectoryContents(fixturesFull, null, unlisted);
+	const url = await getUrl({unlisted});
+
+	const response = await fetch(url, {
+		headers: {
+			Accept: 'application/json'
+		}
+	});
+
+	const type = response.headers.get('content-type');
+	t.is(type, 'application/json');
+
+	const {files} = await response.json();
+
+	const existing = files.every(file => {
+		const full = file.base.replace('/', '');
+		return contents.includes(full);
+	});
+
+	t.true(existing);
+});
+
