@@ -20,7 +20,8 @@
   "author": "leo",
   "license": "MIT",
   "files": [
-    "./src/*.js"
+    "src/index.js",
+    "src/directory.js"
   ],
   "devDependencies": {
     "@zeit/eslint-config-node": "0.2.13",
