@@ -90,7 +90,7 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 	}
 
 	const defaultType = 301;
-	const matchHTML = /.html|.htm|\/index$/g;
+	const matchHTML = /(\.html|\.htm|\/index)$/g;
 
 	let cleanedUrl = false;
 
