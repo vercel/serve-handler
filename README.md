@@ -83,7 +83,7 @@ You can disable the feature like follows:
 }
 ```
 
-However, you can also restrict this behavior to certain paths:
+However, you can also restrict it to certain paths:
 
 ```json
 {
