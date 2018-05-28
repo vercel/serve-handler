@@ -1,9 +1,10 @@
 // Native
+const {promisify} = require('util');
 const path = require('path');
+const {createReadStream, stat, readdir} = require('fs');
 
 // Packages
 const url = require('fast-url-parser');
-const fs = require('fs-extra');
 const slasher = require('glob-slasher');
 const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');
@@ -13,15 +14,11 @@ const bytes = require('bytes');
 // Other
 const template = require('./directory');
 
-const getHandlers = methods => {
-	const {stat, createReadStream, readdir} = fs;
-
-	return Object.assign({
-		stat,
-		createReadStream,
-		readdir
-	}, methods);
-};
+const getHandlers = methods => Object.assign({
+	stat: promisify(stat),
+	createReadStream: createReadStream,
+	readdir: promisify(readdir)
+}, methods);
 
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
@@ -213,7 +210,7 @@ const getPossiblePaths = (relativePath, extension) => [
 	relativePath.endsWith('/') ? relativePath.replace(/\/$/g, extension) : (relativePath + extension)
 ];
 
-const findRelated = async (current, relativePath, stat, extension = '.html') => {
+const findRelated = async (current, relativePath, originalStat, extension = '.html') => {
 	const possible = getPossiblePaths(relativePath, extension);
 
 	let stats = null;
@@ -244,7 +241,7 @@ const findRelated = async (current, relativePath, stat, extension = '.html') => 
 
 	// At this point, no `.html` files have been found, so we
 	// need to check for the existance of `.htm` ones.
-	return findRelated(current, relativePath, stat, '.htm');
+	return findRelated(current, relativePath, originalStat, '.htm');
 };
 
 const canBeListed = (excluded, file) => {
