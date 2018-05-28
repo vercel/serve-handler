@@ -7,6 +7,7 @@ const listen = require('test-listen');
 const micro = require('micro');
 const fetch = require('node-fetch');
 const fs = require('fs-extra');
+const sleep = require('sleep-promise');
 
 // Utilities
 const handler = require('../');
@@ -664,5 +665,24 @@ test('set `unlisted` config property to array', async t => {
 	});
 
 	t.true(existing);
+});
+
+test('set `createReadStream` handler to async function', async t => {
+	const name = '.dotfile';
+	const related = path.join(fixturesFull, name);
+	const content = await fs.readFile(related, 'utf8');
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		createReadStream: async file => {
+			await sleep(2000);
+			return fs.createReadStream(file);
+		}
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+
+	t.deepEqual(content, text);
 });
 
