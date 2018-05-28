@@ -1,7 +1,7 @@
 // Native
 const {promisify} = require('util');
 const path = require('path');
-const {createReadStream, stat, readdir} = require('fs');
+const {stat, createReadStream, readdir} = require('fs');
 
 // Packages
 const url = require('fast-url-parser');
@@ -220,7 +220,7 @@ const findRelated = async (current, relativePath, originalStat, extension = '.ht
 		const absolutePath = path.join(current, related);
 
 		try {
-			stats = await stat(absolutePath);
+			stats = await originalStat(absolutePath);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
 				throw err;
