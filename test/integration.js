@@ -80,7 +80,7 @@ test('render json directory listing', async t => {
 });
 
 test('render html sub directory listing', async t => {
-	const name = 'directory';
+	const name = 'special-directory';
 
 	const sub = path.join(fixturesFull, name);
 	const contents = await getDirectoryContents(sub, true);
@@ -95,7 +95,7 @@ test('render html sub directory listing', async t => {
 });
 
 test('render json sub directory listing', async t => {
-	const name = 'another-directory';
+	const name = 'special-directory';
 
 	const sub = path.join(fixturesFull, name);
 	const contents = await getDirectoryContents(sub, true);
