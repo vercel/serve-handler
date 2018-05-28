@@ -90,7 +90,7 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 	}
 
 	const defaultType = 301;
-	const matchHTML = /.html|.htm|\/index/g;
+	const matchHTML = /(\.html|\.htm|\/index)$/g;
 
 	let cleanedUrl = false;
 
@@ -184,25 +184,24 @@ const getHeaders = async (customHeaders = [], relativePath, stats) => {
 	return Object.assign(defaultHeaders, related);
 };
 
-const applicable = (decodedPath, configEntry, negative) => {
-	let matches = negative ? false : true;
-
-	if (typeof configEntry !== 'undefined') {
-		matches = (configEntry === !matches);
-
-		if (!matches && Array.isArray(configEntry)) {
-			// This is much faster than `.some`
-			for (let index = 0; index < configEntry.length; index++) {
-				const source = configEntry[index];
-
-				if (sourceMatches(source, decodedPath)) {
-					matches = true;
-				}
-			}
-		}
+const applicable = (decodedPath, configEntry) => {
+	if (typeof configEntry === 'boolean') {
+		return configEntry;
 	}
 
-	return matches;
+	if (Array.isArray(configEntry)) {
+		for (let index = 0; index < configEntry.length; index++) {
+			const source = configEntry[index];
+
+			if (sourceMatches(source, decodedPath)) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	return true;
 };
 
 const getPossiblePaths = (relativePath, extension) => [
@@ -271,7 +270,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 		...unlisted
 	];
 
-	if (directoryListing === false || !applicable(relativePath, directoryListing, false)) {
+	if (!applicable(relativePath, directoryListing)) {
 		return null;
 	}
 
@@ -386,7 +385,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const handlers = getHandlers(methods);
 
 	const decodedPath = decodeURIComponent(url.parse(request.url).pathname);
-	const cleanUrl = applicable(decodedPath, config.cleanUrls, true);
+	const cleanUrl = applicable(decodedPath, config.cleanUrls);
 	const redirect = shouldRedirect(decodedPath, config, cleanUrl);
 
 	if (redirect) {
