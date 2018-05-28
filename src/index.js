@@ -511,7 +511,8 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	}
 
 	const headers = await getHeaders(config.headers, relativePath, stats);
+	const stream = await handlers.createReadStream(absolutePath);
 
 	response.writeHead(response.statusCode || 200, headers);
-	handlers.createReadStream(absolutePath).pipe(response);
+	stream.pipe(response);
 };
