@@ -37,6 +37,7 @@
     "node-fetch": "2.1.2",
     "nyc": "11.8.0",
     "request": "2.87.0",
+    "sleep-promise": "6.0.0",
     "test-listen": "1.1.0"
   },
   "eslintConfig": {
