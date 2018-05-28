@@ -71,7 +71,7 @@ For example, if serving a [Jekyll](https://jekyllrb.com/) app, it would look lik
 
 ### cleanUrls (Boolean|Array)
 
-By default, all `.html` and `.htm` files can be accessed without their extension
+By default, all `.html` and `.htm` files can be accessed without their extension.
 
 If one of these extensions is used at the end of a filename, it will automatically perform a redirect with status code [301](https://en.wikipedia.org/wiki/HTTP_301) to the same path, but with the extension dropped.
 
