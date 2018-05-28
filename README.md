@@ -69,6 +69,8 @@ For example, if serving a [Jekyll](https://jekyllrb.com/) app, it would look lik
 }
 ```
 
+**NOTE:** The path cannot contain globs or regular expressions.
+
 ### cleanUrls (Boolean|Array)
 
 By default, all `.html` and `.htm` files can be accessed without their extension.
@@ -93,6 +95,8 @@ However, you can also restrict it to certain paths:
   ]
 }
 ```
+
+**NOTE:** The paths can only contain globs that are matched using [minimatch](https://github.com/isaacs/minimatch).
 
 ### rewrites (Array)
 
@@ -120,6 +124,8 @@ You can also use so-called "routing segments" as follows:
 ```
 
 Now, if a visitor accesses `/projects/123/edit`, it will respond with the file `/edit-project-123.html`.
+
+**NOTE:** The paths can contain globs (matched using [minimatch](https://github.com/isaacs/minimatch)) or regular expressions (match using [path-to-regexp](https://github.com/pillarjs/path-to-regexp)).
 
 ### redirects (Array)
 
@@ -149,6 +155,8 @@ Just like with [rewrites](#rewrites-array), you can also use routing segments:
 
 In the example above, `/old-docs/12` would be forwarded to `/new-docs/12` with status code [301](https://en.wikipedia.org/wiki/HTTP_301). In addition `/old` would be forwarded to `/new` with status code [302](https://en.wikipedia.org/wiki/HTTP_302).
 
+**NOTE:** The paths can contain globs (matched using [minimatch](https://github.com/isaacs/minimatch)) or regular expressions (match using [path-to-regexp](https://github.com/pillarjs/path-to-regexp)).
+
 ### headers (Array)
 
 Allows you to set custom headers (and overwrite the default ones) for certain paths:
@@ -173,6 +181,8 @@ Allows you to set custom headers (and overwrite the default ones) for certain pa
 }
 ```
 
+**NOTE:** The paths can only contain globs that are matched using [minimatch](https://github.com/isaacs/minimatch).
+
 ### directoryListing (Boolean|Array)
 
 For paths are not files, but directories, the package will automatically render a good-looking list of all the files and directories contained inside that directory.
@@ -187,6 +197,8 @@ If you'd like to disable this for all paths, set this option to `false`. Further
   ]
 }
 ```
+
+**NOTE:** The paths can only contain globs that are matched using [minimatch](https://github.com/isaacs/minimatch).
 
 ### unlisted (Array)
 
@@ -204,6 +216,8 @@ Either you disable the directory listing entirely (like shown [here](#directoryl
 ```
 
 The items shown above are excluded from the directory listing by default.
+
+**NOTE:** The paths can only contain globs that are matched using [minimatch](https://github.com/isaacs/minimatch).
 
 ### trailingSlash (Boolean)
 
