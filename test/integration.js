@@ -546,6 +546,25 @@ test('set `cleanUrls` config property to array', async t => {
 	t.is(content, text);
 });
 
+test('set `cleanUrls` config property to empty array', async t => {
+	const name = 'directory';
+
+	const sub = path.join(fixturesFull, name);
+	const contents = await getDirectoryContents(sub, true);
+
+	const url = await getUrl({
+		cleanUrls: []
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+
+	const type = response.headers.get('content-type');
+	t.is(type, 'text/html; charset=utf-8');
+
+	t.true(contents.every(item => text.includes(item)));
+});
+
 test('set `cleanUrls` config property to `true` and try with file', async t => {
 	const target = '/directory/clean-file';
 
