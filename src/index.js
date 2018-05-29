@@ -66,20 +66,23 @@ const toTarget = (source, destination, previousPath) => {
 };
 
 const applyRewrites = (requestPath, rewrites = []) => {
-	if (rewrites.length === 0) {
+	// We need to copy the array, since we're going to modify it
+	const rewritesCopy = rewrites.slice();
+
+	if (rewritesCopy.length === 0) {
 		return requestPath;
 	}
 
-	for (let index = 0; index < rewrites.length; index++) {
+	for (let index = 0; index < rewritesCopy.length; index++) {
 		const {source, destination} = rewrites[index];
 		const target = toTarget(source, destination, requestPath);
 
 		if (target) {
 			// Remove rules that were already applied
-			rewrites.splice(index, 1);
+			rewritesCopy.splice(index, 1);
 
 			// Check if there are remaining ones to be applied
-			return applyRewrites(slasher(target), rewrites);
+			return applyRewrites(slasher(target), rewritesCopy);
 		}
 	}
 
