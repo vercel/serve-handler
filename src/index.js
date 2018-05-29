@@ -65,25 +65,32 @@ const toTarget = (source, destination, previousPath) => {
 	return toPath(props);
 };
 
-const applyRewrites = (requestPath, rewrites = []) => {
-	if (rewrites.length === 0) {
-		return requestPath;
+const applyRewrites = (requestPath, rewrites = [], repetitive) => {
+	// We need to copy the array, since we're going to modify it.
+	const rewritesCopy = rewrites.slice();
+
+	// If the method was called again, the path was already rewritten
+	// so we need to make sure to return it.
+	const fallback = repetitive ? requestPath : null;
+
+	if (rewritesCopy.length === 0) {
+		return fallback;
 	}
 
-	for (let index = 0; index < rewrites.length; index++) {
+	for (let index = 0; index < rewritesCopy.length; index++) {
 		const {source, destination} = rewrites[index];
 		const target = toTarget(source, destination, requestPath);
 
 		if (target) {
 			// Remove rules that were already applied
-			rewrites.splice(index, 1);
+			rewritesCopy.splice(index, 1);
 
 			// Check if there are remaining ones to be applied
-			return applyRewrites(slasher(target), rewrites);
+			return applyRewrites(slasher(target), rewritesCopy, true);
 		}
 	}
 
-	return requestPath;
+	return fallback;
 };
 
 const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) => {
@@ -213,8 +220,8 @@ const getPossiblePaths = (relativePath, extension) => [
 	relativePath.endsWith('/') ? relativePath.replace(/\/$/g, extension) : (relativePath + extension)
 ];
 
-const findRelated = async (current, relativePath, originalStat, extension = '.html') => {
-	const possible = getPossiblePaths(relativePath, extension);
+const findRelated = async (current, relativePath, rewrittenPath, originalStat, extension = '.html') => {
+	const possible = rewrittenPath ? [rewrittenPath] : getPossiblePaths(relativePath, extension);
 
 	let stats = null;
 
@@ -244,7 +251,7 @@ const findRelated = async (current, relativePath, originalStat, extension = '.ht
 
 	// At this point, no `.html` files have been found, so we
 	// need to check for the existance of `.htm` ones.
-	return findRelated(current, relativePath, originalStat, '.htm');
+	return findRelated(current, relativePath, rewrittenPath, originalStat, '.htm');
 };
 
 const canBeListed = (excluded, file) => {
@@ -388,9 +395,11 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const current = config.public ? path.join(cwd, config.public) : cwd;
 	const handlers = getHandlers(methods);
 
-	const decodedPath = decodeURIComponent(url.parse(request.url).pathname);
-	const cleanUrl = applicable(decodedPath, config.cleanUrls);
-	const redirect = shouldRedirect(decodedPath, config, cleanUrl);
+	let relativePath = decodeURIComponent(url.parse(request.url).pathname);
+	let absolutePath = path.join(current, relativePath);
+
+	const cleanUrl = applicable(relativePath, config.cleanUrls);
+	const redirect = shouldRedirect(relativePath, config, cleanUrl);
 
 	if (redirect) {
 		response.writeHead(redirect.statusCode, {
@@ -400,9 +409,6 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		response.end();
 		return;
 	}
-
-	let relativePath = applyRewrites(decodedPath, config.rewrites);
-	let absolutePath = path.join(current, relativePath);
 
 	let stats = null;
 
@@ -417,9 +423,11 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
-	if ((!stats || stats.isDirectory()) && cleanUrl) {
+	const rewrittenPath = applyRewrites(relativePath, config.rewrites);
+
+	if ((!stats || stats.isDirectory()) && (cleanUrl || rewrittenPath)) {
 		try {
-			const related = await findRelated(current, relativePath, handlers.stat);
+			const related = await findRelated(current, relativePath, rewrittenPath, handlers.stat);
 
 			if (related) {
 				({stats, absolutePath} = related);
