@@ -75,6 +75,10 @@ const applyRewrites = (requestPath, rewrites = []) => {
 		const target = toTarget(source, destination, requestPath);
 
 		if (target) {
+			// Remove rules that were already applied
+			rewrites.splice(index, 1);
+
+			// Check if there are remaining ones to be applied
 			return applyRewrites(slasher(target), rewrites);
 		}
 	}
