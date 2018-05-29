@@ -215,6 +215,24 @@ test('set `rewrites` config property to wildcard path', async t => {
 	t.is(text, content);
 });
 
+test('set `rewrites` config property to non-matching path', async t => {
+	const destination = '404.html';
+	const related = path.join(fixturesFull, destination);
+	const content = await fs.readFile(related, 'utf8');
+
+	const url = await getUrl({
+		rewrites: [{
+			source: 'face/**',
+			destination
+		}]
+	});
+
+	const response = await fetch(`${url}/mask/delete`);
+	const text = await response.text();
+
+	t.is(text, content);
+});
+
 test('set `rewrites` config property to one-star wildcard path', async t => {
 	const destination = '.dotfile';
 	const related = path.join(fixturesFull, destination);
