@@ -8,7 +8,7 @@ const url = require('fast-url-parser');
 const slasher = require('glob-slasher');
 const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');
-const mime = require('mime/lite');
+const mime = require('mime-types');
 const bytes = require('bytes');
 const isPathInside = require('path-is-inside');
 
@@ -188,10 +188,16 @@ const getHeaders = async (customHeaders = [], relativePath, rewrittenPath, stats
 	}
 
 	const defaultHeaders = {
-		'Content-Type': mime.getType(relativePath) || mime.getType(rewrittenPath),
 		'Last-Modified': stats.mtime.toUTCString(),
 		'Content-Length': stats.size
 	};
+
+	const getBase = target => (target ? path.parse(target).base : '');
+	const contentType = mime.contentType(getBase(relativePath)) || mime.contentType(getBase(rewrittenPath));
+
+	if (contentType) {
+		defaultHeaders['Content-Type'] = contentType;
+	}
 
 	return Object.assign(defaultHeaders, related);
 };
@@ -241,7 +247,8 @@ const findRelated = async (current, relativePath, rewrittenPath, originalStat, e
 		if (stats) {
 			return {
 				stats,
-				absolutePath
+				absolutePath,
+				rewrittenPath: related
 			};
 		}
 	}
@@ -432,14 +439,14 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
-	const rewrittenPath = applyRewrites(relativePath, config.rewrites);
+	let rewrittenPath = applyRewrites(relativePath, config.rewrites);
 
 	if ((!stats || stats.isDirectory()) && (cleanUrl || rewrittenPath)) {
 		try {
 			const related = await findRelated(current, relativePath, rewrittenPath, handlers.stat);
 
 			if (related) {
-				({stats, absolutePath} = related);
+				({stats, absolutePath, rewrittenPath} = related);
 			}
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
@@ -458,7 +465,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	}
 
 	if (((stats && stats.isDirectory()) || !stats) && acceptsJSON) {
-		response.setHeader('Content-Type', 'application/json');
+		response.setHeader('Content-Type', 'application/json; charset=utf-8');
 	}
 
 	if (stats && stats.isDirectory()) {

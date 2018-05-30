@@ -67,7 +67,7 @@ test('render json directory listing', async t => {
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json');
+	t.is(type, 'application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -108,7 +108,7 @@ test('render json sub directory listing', async t => {
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json');
+	t.is(type, 'application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -141,7 +141,7 @@ test('render json file', async t => {
 	const response = await fetch(`${url}/${name}`);
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json');
+	t.is(type, 'application/json; charset=utf-8');
 
 	const text = await response.text();
 	const spec = JSON.parse(text);
@@ -441,7 +441,7 @@ test('set `headers` to fixed headers and check default headers', async t => {
 	const type = headers.get('content-type');
 
 	t.is(cacheControl, value);
-	t.is(type, 'application/json');
+	t.is(type, 'application/json; charset=utf-8');
 });
 
 test('receive not found error', async t => {
@@ -625,7 +625,7 @@ test('set `cleanUrls` config property to `true` and not index file found', async
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json');
+	t.is(type, 'application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -692,7 +692,7 @@ test('set `unlisted` config property to array', async t => {
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json');
+	t.is(type, 'application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -734,7 +734,7 @@ test('return mime type of the `rewrittenPath` if mime type of `relativePath` is 
 	const response = await fetch(`${url}/whatever`);
 	const type = response.headers.get('content-type');
 
-	t.is(type, 'text/html');
+	t.is(type, 'text/html; charset=utf-8');
 });
 
 test('error if trying to traverse path', async t => {
