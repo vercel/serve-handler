@@ -170,7 +170,7 @@ const appendHeaders = (target, source) => {
 	}
 };
 
-const getHeaders = async (customHeaders = [], relativePath, stats) => {
+const getHeaders = async (customHeaders = [], relativePath, rewrittenPath, stats) => {
 	const related = {};
 
 	if (customHeaders.length > 0) {
@@ -187,7 +187,7 @@ const getHeaders = async (customHeaders = [], relativePath, stats) => {
 	}
 
 	const defaultHeaders = {
-		'Content-Type': mime.getType(relativePath),
+		'Content-Type': mime.getType(relativePath) || mime.getType(rewrittenPath),
 		'Last-Modified': stats.mtime.toUTCString(),
 		'Content-Length': stats.size
 	};
@@ -520,7 +520,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		relativePath = errorPage;
 	}
 
-	const headers = await getHeaders(config.headers, relativePath, stats);
+	const headers = await getHeaders(config.headers, relativePath, rewrittenPath, stats);
 	const stream = await handlers.createReadStream(absolutePath);
 
 	response.writeHead(response.statusCode || 200, headers);
