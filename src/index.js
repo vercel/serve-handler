@@ -10,6 +10,7 @@ const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');
 const mime = require('mime/lite');
 const bytes = require('bytes');
+const isPathInside = require('path-is-inside');
 
 // Other
 const template = require('./directory');
@@ -396,6 +397,15 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	let relativePath = decodeURIComponent(url.parse(request.url).pathname);
 	let absolutePath = path.join(current, relativePath);
+
+	// Prevent path traversal vulnerabilities. We could do this
+	// by ourselves, but using the package covers all the edge cases.
+	if (!isPathInside(absolutePath, current)) {
+		response.statusCode = 400;
+		response.end('Bad Request');
+
+		return;
+	}
 
 	const cleanUrl = applicable(relativePath, config.cleanUrls);
 	const redirect = shouldRedirect(relativePath, config, cleanUrl);

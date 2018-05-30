@@ -245,20 +245,6 @@ await handler(request, response, undefined, {
 });
 ```
 
-## Use Cases
-
-There are two environments in which [ZEIT](https://zeit.co) uses this package:
-
-### Development
-
-When running static applications or sites on your local device, we suggest using [serve](https://github.com/zeit/serve).
-
-Since it comes with support for `serve-handler` out of the box, you can create a `serve.json` file to customize its behavior. It will also read the configuration from `static` inside `now.json`.
-
-### Production
-
-When deploying your site to [Now](https://zeit.co/now), both the `serve.json` file or the `static` property inside `now.json` will be parsed and used to handle requests on the platform.
-
 ## Author
 
 Leo Lamprecht ([@notquiteleo](https://twitter.com/notquiteleo)) - [ZEIT](https://zeit.co)

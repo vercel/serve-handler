@@ -736,3 +736,12 @@ test('return mime type of the `rewrittenPath` if mime type of `relativePath` is 
 
 	t.is(type, 'text/html');
 });
+
+test('error if trying to traverse path', async t => {
+	const url = await getUrl();
+	const response = await fetch(`${url}/../../test`);
+	const text = await response.text();
+
+	t.is(response.status, 400);
+	t.is(text, 'Bad Request');
+});

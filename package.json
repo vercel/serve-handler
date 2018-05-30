@@ -33,7 +33,7 @@
     "dot": "1.1.2",
     "eslint": "4.19.1",
     "fs-extra": "6.0.1",
-    "micro": "9.3.1",
+    "micro": "9.3.2",
     "node-fetch": "2.1.2",
     "nyc": "11.8.0",
     "request": "2.87.0",
@@ -64,6 +64,7 @@
     "glob-slasher": "1.0.1",
     "mime": "2.3.1",
     "minimatch": "3.0.4",
+    "path-is-inside": "1.0.2",
     "path-to-regexp": "2.2.1"
   }
 }
