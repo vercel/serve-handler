@@ -723,3 +723,16 @@ test('set `createReadStream` handler to async function', async t => {
 	t.deepEqual(content, text);
 });
 
+test('return mime type of the `rewrittenPath` if mime type of `relativePath` is null', async t => {
+	const url = await getUrl({
+		rewrites: [{
+			source: '**',
+			destination: 'clean-file.html'
+		}]
+	});
+
+	const response = await fetch(`${url}/whatever`);
+	const type = response.headers.get('content-type');
+
+	t.is(type, 'text/html');
+});
