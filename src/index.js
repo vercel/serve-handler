@@ -299,13 +299,10 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 		if (stats.isDirectory()) {
 			details.base += slashSuffix;
 			details.relative += slashSuffix;
-
-			// This is not camelcase, as we might be sending
-			// the data away as JSON later, which shouldn't contain
-			// any camelcased keys.
-			details['is-directory'] = true;
+			details.type = 'directory';
 		} else {
 			details.ext = details.ext.split('.')[1] || 'txt';
+			details.type = 'file';
 
 			details.size = bytes(stats.size, {
 				unitSeparator: ' ',
@@ -328,8 +325,8 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 
 	// Sort to list directories first, then sort alphabetically
 	files = files.sort((a, b) => {
-		const aIsDir = a['is-directory'];
-		const bIsDir = b['is-directory'];
+		const aIsDir = a.type === 'directory';
+		const bIsDir = b.type === 'directory';
 
 		/* istanbul ignore next */
 		if (aIsDir && !bIsDir) {
@@ -354,9 +351,11 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 		const relative = path.join('/', ...directoryPath, '..', slashSuffix);
 
 		files.unshift({
+			type: 'directory',
 			base: '..',
 			relative,
-			title: relative
+			title: relative,
+			ext: ''
 		});
 	}
 
