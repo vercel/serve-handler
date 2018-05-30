@@ -398,7 +398,8 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	let relativePath = decodeURIComponent(url.parse(request.url).pathname);
 	let absolutePath = path.join(current, relativePath);
 
-	// Prevent path traversal vulnerabilities
+	// Prevent path traversal vulnerabilities. We could do this
+	// by ourselves, but using the package covers all the edge cases.
 	if (!isPathInside(absolutePath, current)) {
 		response.statusCode = 400;
 		response.end('Bad Request');
