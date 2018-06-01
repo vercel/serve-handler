@@ -10,6 +10,7 @@ const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');
 const mime = require('mime-types');
 const bytes = require('bytes');
+const contentDisposition = require('content-disposition');
 const isPathInside = require('path-is-inside');
 
 // Other
@@ -171,8 +172,10 @@ const appendHeaders = (target, source) => {
 	}
 };
 
-const getHeaders = async (customHeaders = [], relativePath, rewrittenPath, stats) => {
+const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 	const related = {};
+	const {base} = path.parse(absolutePath);
+	const relativePath = path.relative(current, absolutePath);
 
 	if (customHeaders.length > 0) {
 		// By iterating over all headers and never stopping, developers
@@ -181,7 +184,7 @@ const getHeaders = async (customHeaders = [], relativePath, rewrittenPath, stats
 		for (let index = 0; index < customHeaders.length; index++) {
 			const {source, headers} = customHeaders[index];
 
-			if (sourceMatches(source, relativePath)) {
+			if (sourceMatches(source, slasher(relativePath))) {
 				appendHeaders(related, headers);
 			}
 		}
@@ -189,11 +192,16 @@ const getHeaders = async (customHeaders = [], relativePath, rewrittenPath, stats
 
 	const defaultHeaders = {
 		'Last-Modified': stats.mtime.toUTCString(),
-		'Content-Length': stats.size
+		'Content-Length': stats.size,
+		// Default to "inline", which always tries to render in the browser,
+		// if that's not working, it will save the file. But to be clear: This
+		// only happens if it cannot find a appropiate value.
+		'Content-Disposition': contentDisposition(base, {
+			type: 'inline'
+		})
 	};
 
-	const getBase = target => (target ? path.parse(target).base : '');
-	const contentType = mime.contentType(getBase(relativePath)) || mime.contentType(getBase(rewrittenPath));
+	const contentType = mime.contentType(base);
 
 	if (contentType) {
 		defaultHeaders['Content-Type'] = contentType;
@@ -247,8 +255,7 @@ const findRelated = async (current, relativePath, rewrittenPath, originalStat, e
 		if (stats) {
 			return {
 				stats,
-				absolutePath,
-				rewrittenPath: related
+				absolutePath
 			};
 		}
 	}
@@ -401,8 +408,8 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const cwd = process.cwd();
 	const current = config.public ? path.join(cwd, config.public) : cwd;
 	const handlers = getHandlers(methods);
+	const relativePath = decodeURIComponent(url.parse(request.url).pathname);
 
-	let relativePath = decodeURIComponent(url.parse(request.url).pathname);
 	let absolutePath = path.join(current, relativePath);
 
 	// Prevent path traversal vulnerabilities. We could do this
@@ -439,14 +446,14 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
-	let rewrittenPath = applyRewrites(relativePath, config.rewrites);
+	const rewrittenPath = applyRewrites(relativePath, config.rewrites);
 
 	if ((!stats || stats.isDirectory()) && (cleanUrl || rewrittenPath)) {
 		try {
 			const related = await findRelated(current, relativePath, rewrittenPath, handlers.stat);
 
 			if (related) {
-				({stats, absolutePath, rewrittenPath} = related);
+				({stats, absolutePath} = related);
 			}
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
@@ -514,11 +521,10 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			return;
 		}
 
-		const errorPage = '404.html';
-		const errorPageFull = path.join(current, errorPage);
+		const errorPage = path.join(current, '404.html');
 
 		try {
-			stats = await handlers.stat(errorPageFull);
+			stats = await handlers.stat(errorPage);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
 				response.statusCode = 500;
@@ -533,11 +539,10 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			return;
 		}
 
-		absolutePath = errorPageFull;
-		relativePath = errorPage;
+		absolutePath = errorPage;
 	}
 
-	const headers = await getHeaders(config.headers, relativePath, rewrittenPath, stats);
+	const headers = await getHeaders(config.headers, current, absolutePath, stats);
 	const stream = await handlers.createReadStream(absolutePath);
 
 	response.writeHead(response.statusCode || 200, headers);
