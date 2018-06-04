@@ -57,7 +57,7 @@ You can use any of the following options:
 | [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                  |
 | [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths               |
 
-### public (Boolean)
+### public (String)
 
 By default, the current working directory will be served. If you only want to serve a specific path, you can use this options to pass a custom directory to be served relative to the current working directory.
 
