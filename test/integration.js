@@ -129,7 +129,12 @@ test('render json sub directory listing with custom stat handler', async t => {
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
 		stat: (location, isDirectoryListing) => {
-			t.true(isDirectoryListing);
+			if (contents.includes(path.basename(location))) {
+				t.true(isDirectoryListing);
+			} else {
+				t.falsy(isDirectoryListing);
+			}
+
 			return fs.stat(location);
 		}
 	});
