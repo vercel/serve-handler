@@ -301,7 +301,11 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 
 		const filePath = path.resolve(absolutePath, file);
 		const details = path.parse(filePath);
-		const stats = await handlers.stat(filePath);
+
+		// It's important to indicate that the `stat` call was
+		// spawned by the directory listing, as Now is
+		// simulating those calls and needs to special-case this.
+		const stats = await handlers.stat(filePath, true);
 
 		details.relative = path.join(relativePath, details.base);
 
