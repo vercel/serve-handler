@@ -314,14 +314,6 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			stats = await handlers.stat(filePath);
 		}
 
-		if (canRenderSingle) {
-			return {
-				singleFile: true,
-				absolutePath: filePath,
-				stats
-			};
-		}
-
 		details.relative = path.join(relativePath, details.base);
 
 		if (stats.isDirectory()) {
@@ -329,6 +321,14 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			details.relative += slashSuffix;
 			details.type = 'directory';
 		} else {
+			if (canRenderSingle) {
+				return {
+					singleFile: true,
+					absolutePath: filePath,
+					stats
+				};
+			}
+
 			details.ext = details.ext.split('.')[1] || 'txt';
 			details.type = 'file';
 
