@@ -120,6 +120,44 @@ test('render json sub directory listing', async t => {
 	t.true(existing);
 });
 
+test('render json sub directory listing with custom stat handler', async t => {
+	const name = 'special-directory';
+
+	const sub = path.join(fixturesFull, name);
+	const contents = await getDirectoryContents(sub, true);
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: (location, isDirectoryListing) => {
+			if (contents.includes(path.basename(location))) {
+				t.true(isDirectoryListing);
+			} else {
+				t.falsy(isDirectoryListing);
+			}
+
+			return fs.stat(location);
+		}
+	});
+
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			Accept: 'application/json'
+		}
+	});
+
+	const type = response.headers.get('content-type');
+	t.is(type, 'application/json; charset=utf-8');
+
+	const {files} = await response.json();
+
+	const existing = files.every(file => {
+		const full = file.base.replace('/', '');
+		return contents.includes(full);
+	});
+
+	t.true(existing);
+});
+
 test('render dotfile', async t => {
 	const name = '.dotfile';
 	const related = path.join(fixturesFull, name);
@@ -147,6 +185,41 @@ test('render json file', async t => {
 	const spec = JSON.parse(text);
 
 	t.deepEqual(spec, content);
+});
+
+test('try to render non-existing json file', async t => {
+	const name = 'mask-off.json';
+	const url = await getUrl();
+	const response = await fetch(`${url}/${name}`);
+
+	const type = response.headers.get('content-type');
+
+	t.is(type, 'text/html; charset=utf-8');
+	t.is(response.status, 404);
+});
+
+test('try to render non-existing json file and `stat` errors', async t => {
+	const name = 'mask-off.json';
+	const message = 'I am an error';
+
+	let done = null;
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: location => {
+			if (path.basename(location) === name && !done) {
+				done = true;
+				throw new Error(message);
+			}
+
+			return fs.stat(location);
+		}
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+
+	t.is(text, message);
 });
 
 test('set `trailingSlash` config property to `true`', async t => {
@@ -656,6 +729,62 @@ test('error occurs while getting stat of path', async t => {
 	});
 
 	const response = await fetch(url);
+	const text = await response.text();
+
+	t.is(response.status, 500);
+	t.is(text, message);
+});
+
+test('the first `stat` call should be for a related file', async t => {
+	let done = null;
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: location => {
+			if (!done) {
+				t.is(path.basename(location), 'index.html');
+				done = true;
+			}
+
+			return fs.stat(location);
+		}
+	});
+
+	await fetch(url);
+});
+
+test('the `stat` call should only be made for files and directories', async t => {
+	const locations = [];
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: location => {
+			locations.push(location);
+			return fs.stat(location);
+		}
+	});
+
+	await fetch(url);
+
+	t.falsy(locations.some(location => path.basename(location) === '.html'));
+});
+
+test('error occurs while getting stat of not-found path', async t => {
+	const message = 'This is an error';
+	const base = 'not-existing';
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: location => {
+			if (path.basename(location) === base) {
+				throw new Error(message);
+			}
+
+			return fs.stat(location);
+		}
+	});
+
+	const response = await fetch(`${url}/${base}`);
 	const text = await response.text();
 
 	t.is(response.status, 500);

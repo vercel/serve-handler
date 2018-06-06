@@ -97,13 +97,12 @@ const applyRewrites = (requestPath, rewrites = [], repetitive) => {
 
 const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) => {
 	const slashing = typeof trailingSlash === 'boolean';
+	const defaultType = 301;
+	const matchHTML = /(\.html|\/index)$/g;
 
 	if (redirects.length === 0 && !slashing && !cleanUrl) {
 		return null;
 	}
-
-	const defaultType = 301;
-	const matchHTML = /(\.html|\/index)$/g;
 
 	let cleanedUrl = false;
 
@@ -233,7 +232,7 @@ const applicable = (decodedPath, configEntry) => {
 const getPossiblePaths = (relativePath, extension) => [
 	path.join(relativePath, `index${extension}`),
 	relativePath.endsWith('/') ? relativePath.replace(/\/$/g, extension) : (relativePath + extension)
-];
+].filter(item => path.basename(item) !== extension);
 
 const findRelated = async (current, relativePath, rewrittenPath, originalStat) => {
 	const possible = rewrittenPath ? [rewrittenPath] : getPossiblePaths(relativePath, '.html');
@@ -247,7 +246,7 @@ const findRelated = async (current, relativePath, rewrittenPath, originalStat) =
 		try {
 			stats = await originalStat(absolutePath);
 		} catch (err) {
-			if (err.code !== 'ENOENT') {
+			if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') {
 				throw err;
 			}
 		}
@@ -279,7 +278,7 @@ const canBeListed = (excluded, file) => {
 	return whether;
 };
 
-const renderDirectory = async (current, acceptsJSON, handlers, config, paths) => {
+const renderDirectory = async (current, acceptsJSON, handlers, methods, config, paths) => {
 	const {directoryListing, trailingSlash, unlisted = []} = config;
 	const slashSuffix = typeof trailingSlash === 'boolean' ? (trailingSlash ? '/' : '') : '/';
 	const {relativePath, absolutePath} = paths;
@@ -301,7 +300,17 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 
 		const filePath = path.resolve(absolutePath, file);
 		const details = path.parse(filePath);
-		const stats = await handlers.stat(filePath);
+
+		// It's important to indicate that the `stat` call was
+		// spawned by the directory listing, as Now is
+		// simulating those calls and needs to special-case this.
+		let stats = null;
+
+		if (methods.stat) {
+			stats = await handlers.stat(filePath, true);
+		} else {
+			stats = await handlers.stat(filePath);
+		}
 
 		details.relative = path.join(relativePath, details.base);
 
@@ -429,20 +438,36 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	let stats = null;
 
-	try {
-		stats = await handlers.stat(absolutePath);
-	} catch (err) {
-		if (err.code !== 'ENOENT') {
-			response.statusCode = 500;
-			response.end(err.message);
+	// It's extremely important that we're doing multiple stat calls. This one
+	// right here could technically be removed, but then the program
+	// would be slower. Because for directories, we always want to see if a related file
+	// exists and then (after that), fetch the directory itself if no
+	// related file was found. However (for files, of which most have extensions), we should
+	// always stat right away.
+	//
+	// When simulating a file system without directory indexes, calculating whether a
+	// directory exists requires loading all the file paths and then checking if
+	// one of them includes the path of the directory. As that's a very
+	// performance-expensive thing to do, we need to ensure it's not happening if not really necessary.
 
-			return;
+	if (path.extname(absolutePath) !== '') {
+		try {
+			stats = await handlers.stat(absolutePath);
+		} catch (err) {
+			if (err.code !== 'ENOENT') {
+				console.error(err);
+
+				response.statusCode = 500;
+				response.end(err.message);
+
+				return;
+			}
 		}
 	}
 
 	const rewrittenPath = applyRewrites(relativePath, config.rewrites);
 
-	if ((!stats || stats.isDirectory()) && (cleanUrl || rewrittenPath)) {
+	if (!stats && (cleanUrl || rewrittenPath)) {
 		try {
 			const related = await findRelated(current, relativePath, rewrittenPath, handlers.stat);
 
@@ -451,6 +476,23 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			}
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
+				console.error(err);
+
+				response.statusCode = 500;
+				response.end(err.message);
+
+				return;
+			}
+		}
+	}
+
+	if (!stats) {
+		try {
+			stats = await handlers.stat(absolutePath);
+		} catch (err) {
+			if (err.code !== 'ENOENT') {
+				console.error(err);
+
 				response.statusCode = 500;
 				response.end(err.message);
 
@@ -473,11 +515,13 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		let directory = null;
 
 		try {
-			directory = await renderDirectory(current, acceptsJSON, handlers, config, {
+			directory = await renderDirectory(current, acceptsJSON, handlers, methods, config, {
 				relativePath,
 				absolutePath
 			});
 		} catch (err) {
+			console.error(err);
+
 			response.statusCode = 500;
 			response.end(err.message);
 
@@ -521,6 +565,8 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			stats = await handlers.stat(errorPage);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
+				console.error(err);
+
 				response.statusCode = 500;
 				response.end(err.message);
 
