@@ -599,21 +599,6 @@ test('set `cleanUrls` config property to `true` and try with file', async t => {
 	t.is(location, `${url}${target}`);
 });
 
-test('set `cleanUrls` config property to `true` and render `.htm` file', async t => {
-	const target = 'another-directory';
-	const index = path.join(fixturesFull, target, 'index.htm');
-
-	const url = await getUrl({
-		cleanUrls: true
-	});
-
-	const response = await fetch(`${url}/${target}`);
-	const content = await fs.readFile(index, 'utf8');
-	const text = await response.text();
-
-	t.is(content, text);
-});
-
 test('set `cleanUrls` config property to `true` and not index file found', async t => {
 	const contents = await getDirectoryContents();
 	const url = await getUrl({cleanUrls: true});
