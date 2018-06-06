@@ -56,6 +56,7 @@ You can use any of the following options:
 | [`directoryListing`](#directorylisting-booleanarray) | Disable directory listing or restrict it to certain paths |
 | [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                  |
 | [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths               |
+| [`renderSingle`](#rendersingle-boolean)              | If a directory only contains one file, render it          |
 
 ### public (String)
 
@@ -230,6 +231,20 @@ By default, the package will try to make assumptions for when to add trailing sl
 ```
 
 With the above config, a request to `/test` would now result in a [301](https://en.wikipedia.org/wiki/HTTP_301) redirect to `/test/`.
+
+### renderSingle (Boolean)
+
+Sometimes you might want to have a directory path actually render a file, if the directory only contains one. This is only useful for any files that are not `.html` files (for those, [`cleanUrls`](#cleanurls-booleanarray) is faster).
+
+This is disabled by default and can be enabled like this:
+
+```js
+{
+  "renderSingle": true
+}
+```
+
+After that, if you access your directory `/test` (for example), you will see an image being rendered if the directory contains a single image file.
 
 ## Middleware
 

@@ -859,3 +859,20 @@ test('error if trying to traverse path', async t => {
 	t.is(response.status, 400);
 	t.is(text, 'Bad Request');
 });
+
+test('render file if directory only contains one', async t => {
+	const directory = 'single-directory';
+	const file = 'content.txt';
+	const related = path.join(fixturesFull, directory, file);
+	const content = await fs.readFile(related, 'utf8');
+
+	const url = await getUrl({
+		renderSingle: true
+	});
+
+	const response = await fetch(`${url}/${directory}`);
+	const text = await response.text();
+
+	t.is(text, content);
+});
+

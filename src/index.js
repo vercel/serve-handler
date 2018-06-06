@@ -279,7 +279,7 @@ const canBeListed = (excluded, file) => {
 };
 
 const renderDirectory = async (current, acceptsJSON, handlers, methods, config, paths) => {
-	const {directoryListing, trailingSlash, unlisted = []} = config;
+	const {directoryListing, trailingSlash, unlisted = [], renderSingle} = config;
 	const slashSuffix = typeof trailingSlash === 'boolean' ? (trailingSlash ? '/' : '') : '/';
 	const {relativePath, absolutePath} = paths;
 
@@ -289,11 +289,13 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		...unlisted
 	];
 
-	if (!applicable(relativePath, directoryListing)) {
-		return null;
+	if (!applicable(relativePath, directoryListing) && !renderSingle) {
+		return {};
 	}
 
 	let files = await handlers.readdir(absolutePath);
+
+	const canRenderSingle = renderSingle && (files.length === 1);
 
 	for (let index = 0; index < files.length; index++) {
 		const file = files[index];
@@ -319,6 +321,14 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			details.relative += slashSuffix;
 			details.type = 'directory';
 		} else {
+			if (canRenderSingle) {
+				return {
+					singleFile: true,
+					absolutePath: filePath,
+					stats
+				};
+			}
+
 			details.ext = details.ext.split('.')[1] || 'txt';
 			details.type = 'file';
 
@@ -404,7 +414,9 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		paths: subPaths
 	};
 
-	return acceptsJSON ? JSON.stringify(spec) : template(spec);
+	const output = acceptsJSON ? JSON.stringify(spec) : template(spec);
+
+	return {directory: output};
 };
 
 module.exports = async (request, response, config = {}, methods = {}) => {
@@ -513,12 +525,19 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (stats && stats.isDirectory()) {
 		let directory = null;
+		let singleFile = null;
 
 		try {
-			directory = await renderDirectory(current, acceptsJSON, handlers, methods, config, {
+			const related = await renderDirectory(current, acceptsJSON, handlers, methods, config, {
 				relativePath,
 				absolutePath
 			});
+
+			if (related.singleFile) {
+				({stats, absolutePath, singleFile} = related);
+			} else {
+				({directory} = related);
+			}
 		} catch (err) {
 			console.error(err);
 
@@ -540,9 +559,11 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			return;
 		}
 
-		// The directory listing is disabled, so we want to
-		// render a 404 error.
-		stats = null;
+		if (!singleFile) {
+			// The directory listing is disabled, so we want to
+			// render a 404 error.
+			stats = null;
+		}
 	}
 
 	if (!stats) {
