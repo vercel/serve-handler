@@ -278,7 +278,7 @@ const canBeListed = (excluded, file) => {
 	return whether;
 };
 
-const renderDirectory = async (current, acceptsJSON, handlers, config, paths) => {
+const renderDirectory = async (current, acceptsJSON, handlers, methods, config, paths) => {
 	const {directoryListing, trailingSlash, unlisted = []} = config;
 	const slashSuffix = typeof trailingSlash === 'boolean' ? (trailingSlash ? '/' : '') : '/';
 	const {relativePath, absolutePath} = paths;
@@ -306,7 +306,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 		// simulating those calls and needs to special-case this.
 		let stats = null;
 
-		if (config.handlers && config.handlers.stat) {
+		if (methods.stat) {
 			stats = await handlers.stat(filePath, true);
 		} else {
 			stats = await handlers.stat(filePath);
@@ -488,7 +488,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		let directory = null;
 
 		try {
-			directory = await renderDirectory(current, acceptsJSON, handlers, config, {
+			directory = await renderDirectory(current, acceptsJSON, handlers, methods, config, {
 				relativePath,
 				absolutePath
 			});
