@@ -440,7 +440,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	// It's extremely important that we're doing multiple stat calls. This one
 	// right here could technically be removed, but then the program
-	// would be slower. Cause for directories, we always wanna see if a related file
+	// would be slower. Because for directories, we always wanna see if a related file
 	// exists and then (after that), fetch the directory itself if no
 	// related file was found. However (for files, of which most have extensions), we should
 	// always stat right away.
