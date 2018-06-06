@@ -700,6 +700,40 @@ test('error occurs while getting stat of path', async t => {
 	t.is(text, message);
 });
 
+test('the first `stat` call should be for a related file', async t => {
+	let done = null;
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: location => {
+			if (!done) {
+				t.is(path.basename(location), 'index.html');
+				done = true;
+			}
+
+			return fs.stat(location);
+		}
+	});
+
+	await fetch(url);
+});
+
+test('the `stat` call should only be made for files and directories', async t => {
+	const locations = [];
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: location => {
+			locations.push(location);
+			return fs.stat(location);
+		}
+	});
+
+	await fetch(url);
+
+	t.falsy(locations.some(location => path.basename(location) === '.html'));
+});
+
 test('error occurs while getting stat of not-found path', async t => {
 	const message = 'This is an error';
 	const base = 'not-existing';

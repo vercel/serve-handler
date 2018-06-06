@@ -232,7 +232,7 @@ const applicable = (decodedPath, configEntry) => {
 const getPossiblePaths = (relativePath, extension) => [
 	path.join(relativePath, `index${extension}`),
 	relativePath.endsWith('/') ? relativePath.replace(/\/$/g, extension) : (relativePath + extension)
-];
+].filter(item => path.basename(item) !== extension);
 
 const findRelated = async (current, relativePath, rewrittenPath, originalStat) => {
 	const possible = rewrittenPath ? [rewrittenPath] : getPossiblePaths(relativePath, '.html');
