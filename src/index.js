@@ -97,13 +97,12 @@ const applyRewrites = (requestPath, rewrites = [], repetitive) => {
 
 const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) => {
 	const slashing = typeof trailingSlash === 'boolean';
+	const defaultType = 301;
+	const matchHTML = /(\.html|\/index)$/g;
 
 	if (redirects.length === 0 && !slashing && !cleanUrl) {
 		return null;
 	}
-
-	const defaultType = 301;
-	const matchHTML = /(\.html|\/index)$/g;
 
 	let cleanedUrl = false;
 
@@ -210,20 +209,27 @@ const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 	return Object.assign(defaultHeaders, related);
 };
 
-const applicable = (decodedPath, configEntry) => {
+const applicable = (decodedPath, configEntry, cleanUrls) => {
+	const matchHTML = /(\.html|\/index)$/g;
+	const allowed = cleanUrls ? matchHTML.test(decodedPath) : true;
+
 	if (typeof configEntry === 'boolean') {
-		return configEntry;
+		return configEntry ? allowed : false;
 	}
 
 	if (Array.isArray(configEntry)) {
 		for (let index = 0; index < configEntry.length; index++) {
 			const source = configEntry[index];
 
-			if (sourceMatches(source, decodedPath)) {
+			if (allowed && sourceMatches(source, decodedPath)) {
 				return true;
 			}
 		}
 
+		return false;
+	}
+
+	if (!allowed) {
 		return false;
 	}
 
@@ -305,7 +311,13 @@ const renderDirectory = async (current, acceptsJSON, handlers, config, paths) =>
 		// It's important to indicate that the `stat` call was
 		// spawned by the directory listing, as Now is
 		// simulating those calls and needs to special-case this.
-		const stats = await handlers.stat(filePath, true);
+		let stats = null;
+
+		if (config.handlers && config.handlers.stat) {
+			stats = await handlers.stat(filePath, true);
+		} else {
+			stats = await handlers.stat(filePath);
+		}
 
 		details.relative = path.join(relativePath, details.base);
 
@@ -419,7 +431,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return;
 	}
 
-	const cleanUrl = applicable(relativePath, config.cleanUrls);
+	const cleanUrl = applicable(relativePath, config.cleanUrls, true);
 	const redirect = shouldRedirect(relativePath, config, cleanUrl);
 
 	if (redirect) {
@@ -433,20 +445,9 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	let stats = null;
 
-	try {
-		stats = await handlers.stat(absolutePath);
-	} catch (err) {
-		if (err.code !== 'ENOENT') {
-			response.statusCode = 500;
-			response.end(err.message);
-
-			return;
-		}
-	}
-
 	const rewrittenPath = applyRewrites(relativePath, config.rewrites);
 
-	if ((!stats || stats.isDirectory()) && (cleanUrl || rewrittenPath)) {
+	if (cleanUrl || rewrittenPath) {
 		try {
 			const related = await findRelated(current, relativePath, rewrittenPath, handlers.stat);
 
@@ -454,7 +455,24 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 				({stats, absolutePath} = related);
 			}
 		} catch (err) {
+			if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') {
+				console.error(err);
+
+				response.statusCode = 500;
+				response.end(err.message);
+
+				return;
+			}
+		}
+	}
+
+	if (!stats) {
+		try {
+			stats = await handlers.stat(absolutePath);
+		} catch (err) {
 			if (err.code !== 'ENOENT') {
+				console.error(err);
+
 				response.statusCode = 500;
 				response.end(err.message);
 
@@ -482,6 +500,8 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 				absolutePath
 			});
 		} catch (err) {
+			console.error(err);
+
 			response.statusCode = 500;
 			response.end(err.message);
 
@@ -525,6 +545,8 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			stats = await handlers.stat(errorPage);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
+				console.error(err);
+
 				response.statusCode = 500;
 				response.end(err.message);
 
