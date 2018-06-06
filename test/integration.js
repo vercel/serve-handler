@@ -187,6 +187,41 @@ test('render json file', async t => {
 	t.deepEqual(spec, content);
 });
 
+test('try to render non-existing json file', async t => {
+	const name = 'mask-off.json';
+	const url = await getUrl();
+	const response = await fetch(`${url}/${name}`);
+
+	const type = response.headers.get('content-type');
+
+	t.is(type, 'text/html; charset=utf-8');
+	t.is(response.status, 404);
+});
+
+test('try to render non-existing json file and `stat` errors', async t => {
+	const name = 'mask-off.json';
+	const message = 'I am an error';
+
+	let done = null;
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		stat: location => {
+			if (path.basename(location) === name && !done) {
+				done = true;
+				throw new Error(message);
+			}
+
+			return fs.stat(location);
+		}
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+
+	t.is(text, message);
+});
+
 test('set `trailingSlash` config property to `true`', async t => {
 	const url = await getUrl({
 		trailingSlash: true
