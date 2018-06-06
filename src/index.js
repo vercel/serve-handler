@@ -103,7 +103,7 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 	}
 
 	const defaultType = 301;
-	const matchHTML = /(\.html|\.htm|\/index)$/g;
+	const matchHTML = /(\.html|\/index)$/g;
 
 	let cleanedUrl = false;
 
@@ -235,8 +235,8 @@ const getPossiblePaths = (relativePath, extension) => [
 	relativePath.endsWith('/') ? relativePath.replace(/\/$/g, extension) : (relativePath + extension)
 ];
 
-const findRelated = async (current, relativePath, rewrittenPath, originalStat, extension = '.html') => {
-	const possible = rewrittenPath ? [rewrittenPath] : getPossiblePaths(relativePath, extension);
+const findRelated = async (current, relativePath, rewrittenPath, originalStat) => {
+	const possible = rewrittenPath ? [rewrittenPath] : getPossiblePaths(relativePath, '.html');
 
 	let stats = null;
 
@@ -260,13 +260,7 @@ const findRelated = async (current, relativePath, rewrittenPath, originalStat, e
 		}
 	}
 
-	if (extension === '.htm') {
-		return null;
-	}
-
-	// At this point, no `.html` files have been found, so we
-	// need to check for the existance of `.htm` ones.
-	return findRelated(current, relativePath, rewrittenPath, originalStat, '.htm');
+	return null;
 };
 
 const canBeListed = (excluded, file) => {

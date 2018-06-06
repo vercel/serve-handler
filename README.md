@@ -49,7 +49,7 @@ You can use any of the following options:
 | Property                                             | Description                                               |
 |------------------------------------------------------|-----------------------------------------------------------|
 | [`public`](#public-boolean)                          | Set a sub directory to be served                          |
-| [`cleanUrls`](#cleanurls-booleanarray)               | Have `.html` and `.htm` extension stripped from paths     |
+| [`cleanUrls`](#cleanurls-booleanarray)               | Have the `.html` extension stripped from paths            |
 | [`rewrites`](#rewrites-array)                        | Rewrite paths to different paths                          |
 | [`redirects`](#redirects-array)                      | Forward paths to different paths or external URLs         |
 | [`headers`](#headers-array)                          | Set custom headers for specific paths                     |
@@ -73,7 +73,7 @@ For example, if serving a [Jekyll](https://jekyllrb.com/) app, it would look lik
 
 ### cleanUrls (Boolean|Array)
 
-By default, all `.html` and `.htm` files can be accessed without their extension.
+By default, all `.html` files can be accessed without their extension.
 
 If one of these extensions is used at the end of a filename, it will automatically perform a redirect with status code [301](https://en.wikipedia.org/wiki/HTTP_301) to the same path, but with the extension dropped.
 
