@@ -209,27 +209,20 @@ const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 	return Object.assign(defaultHeaders, related);
 };
 
-const applicable = (decodedPath, configEntry, cleanUrls) => {
-	const matchHTML = /(\.html|\/index)$/g;
-	const allowed = cleanUrls ? matchHTML.test(decodedPath) : true;
-
+const applicable = (decodedPath, configEntry) => {
 	if (typeof configEntry === 'boolean') {
-		return configEntry ? allowed : false;
+		return configEntry;
 	}
 
 	if (Array.isArray(configEntry)) {
 		for (let index = 0; index < configEntry.length; index++) {
 			const source = configEntry[index];
 
-			if (allowed && sourceMatches(source, decodedPath)) {
+			if (sourceMatches(source, decodedPath)) {
 				return true;
 			}
 		}
 
-		return false;
-	}
-
-	if (!allowed) {
 		return false;
 	}
 
@@ -253,7 +246,7 @@ const findRelated = async (current, relativePath, rewrittenPath, originalStat) =
 		try {
 			stats = await originalStat(absolutePath);
 		} catch (err) {
-			if (err.code !== 'ENOENT') {
+			if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') {
 				throw err;
 			}
 		}
@@ -431,7 +424,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return;
 	}
 
-	const cleanUrl = applicable(relativePath, config.cleanUrls, true);
+	const cleanUrl = applicable(relativePath, config.cleanUrls);
 	const redirect = shouldRedirect(relativePath, config, cleanUrl);
 
 	if (redirect) {
@@ -455,7 +448,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 				({stats, absolutePath} = related);
 			}
 		} catch (err) {
-			if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') {
+			if (err.code !== 'ENOENT') {
 				console.error(err);
 
 				response.statusCode = 500;
