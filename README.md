@@ -260,6 +260,20 @@ await handler(request, response, undefined, {
 });
 ```
 
+## Use Cases
+
+There are two environments in which [ZEIT](https://zeit.co) uses this package:
+
+### Production
+
+When deploying your static project to [Now](https://zeit.co/now), you can add any of the [configuration options](https://github.com/zeit/serve-handler#options) to the `static` property within `now.json` and they will be considered when handling requests to your deployment.
+
+### Development
+
+When testing your project on your local device, we suggest using [serve](https://github.com/zeit/serve).
+
+Since it comes with support for `serve-handler` out of the box, you can create a `serve.json` file to customize its behavior. It will also read the configuration from `static` inside `now.json`.
+
 ## Author
 
 Leo Lamprecht ([@notquiteleo](https://twitter.com/notquiteleo)) - [ZEIT](https://zeit.co)
