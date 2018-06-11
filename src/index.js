@@ -95,6 +95,8 @@ const applyRewrites = (requestPath, rewrites = [], repetitive) => {
 	return fallback;
 };
 
+const ensureSlashStart = target => (target.startsWith('/') ? target : `/${target}`);
+
 const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) => {
 	const slashing = typeof trailingSlash === 'boolean';
 	const defaultType = 301;
@@ -134,7 +136,7 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 
 		if (target) {
 			return {
-				target,
+				target: ensureSlashStart(target),
 				statusCode: defaultType
 			};
 		}
@@ -142,7 +144,7 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 
 	if (cleanedUrl) {
 		return {
-			target: decodedPath,
+			target: ensureSlashStart(decodedPath),
 			statusCode: defaultType
 		};
 	}

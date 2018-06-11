@@ -876,3 +876,16 @@ test('render file if directory only contains one', async t => {
 	t.is(text, content);
 });
 
+test('correctly handle requests to /index if `cleanUrls` is enabled', async t => {
+	const url = await getUrl();
+	const target = `${url}/index`;
+
+	const response = await fetch(target, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url}/`);
+});
+
