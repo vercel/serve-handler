@@ -11,6 +11,7 @@ const sleep = require('sleep-promise');
 
 // Utilities
 const handler = require('../');
+const errorTemplate = require('../src/error');
 
 const fixturesTarget = 'test/fixtures';
 const fixturesFull = path.join(process.cwd(), fixturesTarget);
@@ -219,7 +220,14 @@ test('try to render non-existing json file and `stat` errors', async t => {
 	const response = await fetch(`${url}/${name}`);
 	const text = await response.text();
 
-	t.is(text, message);
+	t.is(response.status, 500);
+
+	const content = errorTemplate({
+		statusCode: 500,
+		message: 'A server error has occurred'
+	});
+
+	t.is(text, content);
 });
 
 test('set `trailingSlash` config property to `true`', async t => {
@@ -525,7 +533,12 @@ test('receive not found error', async t => {
 	const response = await fetch(`${url}/not-existing`);
 	const text = await response.text();
 
-	t.is(text, 'Not Found');
+	const content = errorTemplate({
+		statusCode: 404,
+		message: 'The requested path could not be found'
+	});
+
+	t.is(text, content);
 });
 
 test('receive not found error as json', async t => {
@@ -542,7 +555,7 @@ test('receive not found error as json', async t => {
 	t.deepEqual(json, {
 		error: {
 			code: 'not_found',
-			message: 'Not Found'
+			message: 'The requested path could not be found'
 		}
 	});
 });
@@ -556,7 +569,7 @@ test('receive custom `404.html` error page', async t => {
 });
 
 test('receive error because reading `404.html` failed', async t => {
-	const message = 'This is an error';
+	const message = 'Internal Server Error';
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
@@ -573,7 +586,13 @@ test('receive error because reading `404.html` failed', async t => {
 	const text = await response.text();
 
 	t.is(response.status, 500);
-	t.is(text, message);
+
+	const content = errorTemplate({
+		statusCode: 500,
+		message: 'A server error has occurred'
+	});
+
+	t.is(text, content);
 });
 
 test('disabled directory listing', async t => {
@@ -589,7 +608,7 @@ test('disabled directory listing', async t => {
 });
 
 test('listing the directory failed', async t => {
-	const message = 'This is an error';
+	const message = 'Internal Server Error';
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
@@ -602,7 +621,13 @@ test('listing the directory failed', async t => {
 	const text = await response.text();
 
 	t.is(response.status, 500);
-	t.is(text, message);
+
+	const content = errorTemplate({
+		statusCode: 500,
+		message: 'A server error has occurred'
+	});
+
+	t.is(text, content);
 });
 
 test('set `cleanUrls` config property to `true`', async t => {
@@ -697,7 +722,7 @@ test('set `cleanUrls` config property to `true` and not index file found', async
 
 test('set `cleanUrls` config property to `true` and an error occurs', async t => {
 	const target = 'directory';
-	const message = 'This is an error';
+	const message = 'Internal Server Error';
 
 	const url = await getUrl({
 		cleanUrls: true
@@ -715,11 +740,17 @@ test('set `cleanUrls` config property to `true` and an error occurs', async t =>
 	const text = await response.text();
 
 	t.is(response.status, 500);
-	t.is(text, message);
+
+	const content = errorTemplate({
+		statusCode: 500,
+		message: 'A server error has occurred'
+	});
+
+	t.is(text, content);
 });
 
 test('error occurs while getting stat of path', async t => {
-	const message = 'This is an error';
+	const message = 'Internal Server Error';
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
@@ -770,7 +801,7 @@ test('the `stat` call should only be made for files and directories', async t =>
 });
 
 test('error occurs while getting stat of not-found path', async t => {
-	const message = 'This is an error';
+	const message = 'Internal Server Error';
 	const base = 'not-existing';
 
 	// eslint-disable-next-line no-undefined
@@ -788,7 +819,13 @@ test('error occurs while getting stat of not-found path', async t => {
 	const text = await response.text();
 
 	t.is(response.status, 500);
-	t.is(text, message);
+
+	const content = errorTemplate({
+		statusCode: 500,
+		message: 'A server error has occurred'
+	});
+
+	t.is(text, content);
 });
 
 test('set `unlisted` config property to array', async t => {
@@ -857,7 +894,13 @@ test('error if trying to traverse path', async t => {
 	const text = await response.text();
 
 	t.is(response.status, 400);
-	t.is(text, 'Bad Request');
+
+	const content = errorTemplate({
+		statusCode: 400,
+		message: 'Bad Request'
+	});
+
+	t.is(text, content);
 });
 
 test('render file if directory only contains one', async t => {
