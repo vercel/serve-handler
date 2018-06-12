@@ -433,7 +433,13 @@ const sendError = async (response, acceptsJSON, current, handlers, config, spec)
 
 	if (acceptsJSON) {
 		response.setHeader('Content-Type', 'application/json; charset=utf-8');
-		response.end(JSON.stringify({code, message}));
+
+		response.end(JSON.stringify({
+			error: {
+				code,
+				message
+			}
+		}));
 
 		return;
 	}
