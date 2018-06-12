@@ -2,5 +2,6 @@ node_modules
 yarn-error.log
 package-lock.json
 src/directory.js
+src/error.js
 .nyc_output
 coverage
