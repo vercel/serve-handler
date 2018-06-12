@@ -22,7 +22,8 @@
   "license": "MIT",
   "files": [
     "src/index.js",
-    "src/directory.js"
+    "src/directory.js",
+    "src/error.js"
   ],
   "devDependencies": {
     "@zeit/eslint-config-node": "0.2.13",
@@ -48,10 +49,12 @@
   "nyc": {
     "exclude": [
       "src/directory.js",
+      "src/error.js",
       "test/*"
     ]
   },
   "eslintIgnore": [
+    "error.js",
     "directory.js",
     "coverage"
   ],

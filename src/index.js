@@ -14,7 +14,8 @@ const contentDisposition = require('content-disposition');
 const isPathInside = require('path-is-inside');
 
 // Other
-const template = require('./directory');
+const directoryTemplate = require('./directory');
+const errorTemplate = require('./error');
 
 const getHandlers = methods => Object.assign({
 	stat: promisify(stat),
@@ -416,9 +417,66 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		paths: subPaths
 	};
 
-	const output = acceptsJSON ? JSON.stringify(spec) : template(spec);
+	const output = acceptsJSON ? JSON.stringify(spec) : directoryTemplate(spec);
 
 	return {directory: output};
+};
+
+const sendError = async (response, acceptsJSON, current, handlers, config, spec) => {
+	const {err: original, message, code, statusCode} = spec;
+
+	if (original) {
+		console.error(original);
+	}
+
+	response.statusCode = statusCode;
+
+	if (acceptsJSON) {
+		response.setHeader('Content-Type', 'application/json; charset=utf-8');
+		response.end(JSON.stringify({code, message}));
+
+		return;
+	}
+
+	let stats = null;
+
+	const errorPage = path.join(current, `${statusCode}.html`);
+
+	try {
+		stats = await handlers.stat(errorPage);
+	} catch (err) {
+		if (err.code !== 'ENOENT') {
+			// eslint-disable-next-line no-use-before-define
+			return internalError(response, acceptsJSON, current, handlers, config, err);
+		}
+	}
+
+	if (stats) {
+		const headers = await getHeaders(config.headers, current, errorPage, stats);
+		const stream = await handlers.createReadStream(errorPage);
+
+		response.writeHead(statusCode, headers);
+		stream.pipe(response);
+
+		return;
+	}
+
+	response.setHeader('Content-Type', 'text/html; charset=utf-8');
+	response.end(errorTemplate({statusCode, message}));
+};
+
+const internalError = async (...args) => {
+	const lastIndex = args.length - 1;
+	const err = args[lastIndex];
+
+	args[lastIndex] = {
+		statusCode: 500,
+		code: 'internal_server_error',
+		message: 'A server error has occurred',
+		err
+	};
+
+	return sendError(...args);
 };
 
 module.exports = async (request, response, config = {}, methods = {}) => {
@@ -428,14 +486,20 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const relativePath = decodeURIComponent(url.parse(request.url).pathname);
 
 	let absolutePath = path.join(current, relativePath);
+	let acceptsJSON = null;
+
+	if (request.headers.accept) {
+		acceptsJSON = request.headers.accept.includes('application/json');
+	}
 
 	// Prevent path traversal vulnerabilities. We could do this
 	// by ourselves, but using the package covers all the edge cases.
 	if (!isPathInside(absolutePath, current)) {
-		response.statusCode = 400;
-		response.end('Bad Request');
-
-		return;
+		return sendError(response, acceptsJSON, current, handlers, config, {
+			statusCode: 400,
+			code: 'bad_request',
+			message: 'Bad Request'
+		});
 	}
 
 	const cleanUrl = applicable(relativePath, config.cleanUrls);
@@ -469,12 +533,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			stats = await handlers.stat(absolutePath);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
-				console.error(err);
-
-				response.statusCode = 500;
-				response.end(err.message);
-
-				return;
+				return internalError(response, acceptsJSON, current, handlers, config, err);
 			}
 		}
 	}
@@ -490,12 +549,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			}
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
-				console.error(err);
-
-				response.statusCode = 500;
-				response.end(err.message);
-
-				return;
+				return internalError(response, acceptsJSON, current, handlers, config, err);
 			}
 		}
 	}
@@ -505,24 +559,9 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			stats = await handlers.stat(absolutePath);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
-				console.error(err);
-
-				response.statusCode = 500;
-				response.end(err.message);
-
-				return;
+				return internalError(response, acceptsJSON, current, handlers, config, err);
 			}
 		}
-	}
-
-	let acceptsJSON = null;
-
-	if (request.headers.accept) {
-		acceptsJSON = request.headers.accept.includes('application/json');
-	}
-
-	if (((stats && stats.isDirectory()) || !stats) && acceptsJSON) {
-		response.setHeader('Content-Type', 'application/json; charset=utf-8');
 	}
 
 	if (stats && stats.isDirectory()) {
@@ -541,23 +580,18 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 				({directory} = related);
 			}
 		} catch (err) {
-			console.error(err);
-
-			response.statusCode = 500;
-			response.end(err.message);
-
-			return;
+			if (err.code !== 'ENOENT') {
+				return internalError(response, acceptsJSON, current, handlers, config, err);
+			}
 		}
 
 		if (directory) {
+			const contentType = acceptsJSON ? 'application/json; charset=utf-8' : 'text/html; charset=utf-8';
+
 			response.statusCode = 200;
-
-			// When JSON is accepted, we already set the header before
-			if (!response.getHeader('Content-Type')) {
-				response.setHeader('Content-Type', 'text/html; charset=utf-8');
-			}
-
+			response.setHeader('Content-Type', contentType);
 			response.end(directory);
+
 			return;
 		}
 
@@ -569,40 +603,11 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	}
 
 	if (!stats) {
-		response.statusCode = 404;
-
-		if (acceptsJSON) {
-			response.end(JSON.stringify({
-				error: {
-					code: 'not_found',
-					message: 'Not Found'
-				}
-			}));
-
-			return;
-		}
-
-		const errorPage = path.join(current, '404.html');
-
-		try {
-			stats = await handlers.stat(errorPage);
-		} catch (err) {
-			if (err.code !== 'ENOENT') {
-				console.error(err);
-
-				response.statusCode = 500;
-				response.end(err.message);
-
-				return;
-			}
-		}
-
-		if (!stats) {
-			response.end('Not Found');
-			return;
-		}
-
-		absolutePath = errorPage;
+		return sendError(response, acceptsJSON, current, handlers, config, {
+			statusCode: 404,
+			code: 'not_found',
+			message: 'The requested path could not be found'
+		});
 	}
 
 	const headers = await getHeaders(config.headers, current, absolutePath, stats);
