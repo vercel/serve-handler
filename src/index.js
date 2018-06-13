@@ -524,8 +524,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	try {
 		stats = await handlers.stat(absolutePath);
-	}
-	catch(err) {
+	} catch(err) {
 		stats = null;
 		if (err.code !== 'ENOENT') {
 			return internalError(response, acceptsJSON, current, handlers, config, err);
