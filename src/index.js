@@ -522,47 +522,24 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	let stats = null;
 
-	// It's extremely important that we're doing multiple stat calls. This one
-	// right here could technically be removed, but then the program
-	// would be slower. Because for directories, we always want to see if a related file
-	// exists and then (after that), fetch the directory itself if no
-	// related file was found. However (for files, of which most have extensions), we should
-	// always stat right away.
-	//
-	// When simulating a file system without directory indexes, calculating whether a
-	// directory exists requires loading all the file paths and then checking if
-	// one of them includes the path of the directory. As that's a very
-	// performance-expensive thing to do, we need to ensure it's not happening if not really necessary.
-
-	if (path.extname(absolutePath) !== '') {
-		try {
-			stats = await handlers.stat(absolutePath);
-		} catch (err) {
-			if (err.code !== 'ENOENT') {
-				return internalError(response, acceptsJSON, current, handlers, config, err);
-			}
+	try {
+		stats = await handlers.stat(absolutePath);
+	} catch (err) {
+		stats = null;
+		if (err.code !== 'ENOENT') {
+			return internalError(response, acceptsJSON, current, handlers, config, err);
 		}
 	}
 
 	const rewrittenPath = applyRewrites(relativePath, config.rewrites);
 
-	if (!stats && (cleanUrl || rewrittenPath)) {
+	if ((!stats || stats.isDirectory()) && (cleanUrl || rewrittenPath)) {
 		try {
 			const related = await findRelated(current, relativePath, rewrittenPath, handlers.stat);
 
 			if (related) {
 				({stats, absolutePath} = related);
 			}
-		} catch (err) {
-			if (err.code !== 'ENOENT') {
-				return internalError(response, acceptsJSON, current, handlers, config, err);
-			}
-		}
-	}
-
-	if (!stats) {
-		try {
-			stats = await handlers.stat(absolutePath);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
 				return internalError(response, acceptsJSON, current, handlers, config, err);
