@@ -534,7 +534,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	// one of them includes the path of the directory. As that's a very
 	// performance-expensive thing to do, we need to ensure it's not happening if not really necessary.
 
-	if (path.extname(absolutePath) !== '') {
+	if (path.extname(relativePath) !== '') {
 		try {
 			stats = await handlers.stat(absolutePath);
 		} catch (err) {
