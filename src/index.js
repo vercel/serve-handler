@@ -425,7 +425,8 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 const sendError = async (response, acceptsJSON, current, handlers, config, spec) => {
 	const {err: original, message, code, statusCode} = spec;
 
-	if (original) {
+	/* istanbul ignore next */
+	if (original && process.env.NODE_ENV !== 'test') {
 		console.error(original);
 	}
 
