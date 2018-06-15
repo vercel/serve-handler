@@ -754,16 +754,23 @@ test('error occurs while getting stat of path', async t => {
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: () => {
-			throw new Error(message);
+		stat: location => {
+			if (path.basename(location) !== '500.html') {
+				throw new Error(message);
+			}
 		}
 	});
 
 	const response = await fetch(url);
 	const text = await response.text();
 
+	const content = errorTemplate({
+		statusCode: 500,
+		message: 'A server error has occurred'
+	});
+
 	t.is(response.status, 500);
-	t.is(text, message);
+	t.is(text, content);
 });
 
 test('the first `stat` call should be for a related file', async t => {
