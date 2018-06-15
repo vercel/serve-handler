@@ -754,16 +754,23 @@ test('error occurs while getting stat of path', async t => {
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: () => {
-			throw new Error(message);
+		stat: location => {
+			if (path.basename(location) !== '500.html') {
+				throw new Error(message);
+			}
 		}
 	});
 
 	const response = await fetch(url);
 	const text = await response.text();
 
+	const content = errorTemplate({
+		statusCode: 500,
+		message: 'A server error has occurred'
+	});
+
 	t.is(response.status, 500);
-	t.is(text, message);
+	t.is(text, content);
 });
 
 test('the first `stat` call should be for a related file', async t => {
@@ -932,3 +939,20 @@ test('correctly handle requests to /index if `cleanUrls` is enabled', async t =>
 	t.is(location, `${url}/`);
 });
 
+test('allow dots in `public` configuration property', async t => {
+	const directory = 'public-folder.test';
+	const root = path.join(fixturesTarget, directory);
+	const file = path.join(fixturesFull, directory, 'index.html');
+
+	const url = await getUrl({
+		'public': root,
+		'directoryListing': false
+	});
+
+	const response = await fetch(url);
+	const text = await response.text();
+	const content = await fs.readFile(file, 'utf8');
+
+	t.is(response.status, 200);
+	t.is(content, text);
+});
