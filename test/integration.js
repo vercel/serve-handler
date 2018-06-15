@@ -932,3 +932,20 @@ test('correctly handle requests to /index if `cleanUrls` is enabled', async t =>
 	t.is(location, `${url}/`);
 });
 
+test('allow dots in `public` configuration property', async t => {
+	const directory = 'public-folder.test';
+	const root = path.join(fixturesTarget, directory);
+	const file = path.join(fixturesFull, directory, 'index.html');
+
+	const url = await getUrl({
+		'public': root,
+		'directoryListing': false
+	});
+
+	const response = await fetch(url);
+	const text = await response.text();
+	const content = await fs.readFile(file, 'utf8');
+
+	t.is(response.status, 200);
+	t.is(content, text);
+});
