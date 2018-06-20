@@ -48,7 +48,7 @@ You can use any of the following options:
 
 | Property                                             | Description                                               |
 |------------------------------------------------------|-----------------------------------------------------------|
-| [`public`](#public-boolean)                          | Set a sub directory to be served                          |
+| [`public`](#public-string)                           | Set a sub directory to be served                          |
 | [`cleanUrls`](#cleanurls-booleanarray)               | Have the `.html` extension stripped from paths            |
 | [`rewrites`](#rewrites-array)                        | Rewrite paths to different paths                          |
 | [`redirects`](#redirects-array)                      | Forward paths to different paths or external URLs         |
