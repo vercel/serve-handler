@@ -490,14 +490,25 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const cwd = process.cwd();
 	const current = config.public ? path.join(cwd, config.public) : cwd;
 	const handlers = getHandlers(methods);
-	const relativePath = decodeURIComponent(url.parse(request.url).pathname);
 
-	let absolutePath = path.join(current, relativePath);
+	let relativePath = null;
 	let acceptsJSON = null;
 
 	if (request.headers.accept) {
 		acceptsJSON = request.headers.accept.includes('application/json');
 	}
+
+	try {
+		relativePath = decodeURIComponent(url.parse(request.url).pathname);
+	} catch (err) {
+		return sendError(response, acceptsJSON, current, handlers, config, {
+			statusCode: 400,
+			code: 'bad_request',
+			message: 'Bad Request'
+		});
+	}
+
+	let absolutePath = path.join(current, relativePath);
 
 	// Prevent path traversal vulnerabilities. We could do this
 	// by ourselves, but using the package covers all the edge cases.
