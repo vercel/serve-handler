@@ -956,3 +956,19 @@ test('allow dots in `public` configuration property', async t => {
 	t.is(response.status, 200);
 	t.is(content, text);
 });
+
+test('error for request with malformed URI', async t => {
+	const url = await getUrl();
+	const response = await fetch(`${url}/%E0%A4%A`);
+	const text = await response.text();
+
+	t.is(response.status, 400);
+
+	const content = errorTemplate({
+		statusCode: 400,
+		message: 'Bad Request'
+	});
+
+	t.is(text, content);
+});
+
