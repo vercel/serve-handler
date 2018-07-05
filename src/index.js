@@ -473,11 +473,9 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 	}
 
 	const headers = await getHeaders(config.headers, current, absolutePath, null);
+	headers['Content-Type'] = 'text/html; charset=utf-8';
 
-	response.writeHead(statusCode, Object.assign(headers, {
-		'Content-Type': 'text/html; charset=utf-8'
-	}));
-
+	response.writeHead(statusCode, headers);
 	response.end(errorTemplate({statusCode, message}));
 };
 
