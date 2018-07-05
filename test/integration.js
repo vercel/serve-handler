@@ -972,3 +972,29 @@ test('error for request with malformed URI', async t => {
 	t.is(text, content);
 });
 
+test('error responses get custom headers', async t => {
+	const url = await getUrl({
+		'public': path.join(fixturesTarget, 'single-directory'),
+		'headers': [{
+			source: '**',
+			headers: [{
+				key: 'who',
+				value: 'me'
+			}]
+		}]
+	});
+
+	const response = await fetch(`${url}/non-existing`);
+	const text = await response.text();
+
+	t.is(response.status, 404);
+	t.is(response.headers.get('who'), 'me');
+
+	const content = errorTemplate({
+		statusCode: 404,
+		message: 'The requested path could not be found'
+	});
+
+	t.is(text, content);
+});
+
