@@ -192,21 +192,25 @@ const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 		}
 	}
 
-	const defaultHeaders = {
-		'Last-Modified': stats.mtime.toUTCString(),
-		'Content-Length': stats.size,
-		// Default to "inline", which always tries to render in the browser,
-		// if that's not working, it will save the file. But to be clear: This
-		// only happens if it cannot find a appropiate value.
-		'Content-Disposition': contentDisposition(base, {
-			type: 'inline'
-		})
-	};
+	let defaultHeaders = {};
 
-	const contentType = mime.contentType(base);
+	if (stats) {
+		defaultHeaders = {
+			'Last-Modified': stats.mtime.toUTCString(),
+			'Content-Length': stats.size,
+			// Default to "inline", which always tries to render in the browser,
+			// if that's not working, it will save the file. But to be clear: This
+			// only happens if it cannot find a appropiate value.
+			'Content-Disposition': contentDisposition(base, {
+				type: 'inline'
+			})
+		};
 
-	if (contentType) {
-		defaultHeaders['Content-Type'] = contentType;
+		const contentType = mime.contentType(base);
+
+		if (contentType) {
+			defaultHeaders['Content-Type'] = contentType;
+		}
 	}
 
 	return Object.assign(defaultHeaders, related);
@@ -422,7 +426,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 	return {directory: output};
 };
 
-const sendError = async (response, acceptsJSON, current, handlers, config, spec) => {
+const sendError = async (absolutePath, response, acceptsJSON, current, handlers, config, spec) => {
 	const {err: original, message, code, statusCode} = spec;
 
 	/* istanbul ignore next */
@@ -454,7 +458,7 @@ const sendError = async (response, acceptsJSON, current, handlers, config, spec)
 	} catch (err) {
 		if (err.code !== 'ENOENT') {
 			// eslint-disable-next-line no-use-before-define
-			return internalError(response, acceptsJSON, current, handlers, config, err);
+			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 		}
 	}
 
@@ -468,7 +472,10 @@ const sendError = async (response, acceptsJSON, current, handlers, config, spec)
 		return;
 	}
 
-	response.setHeader('Content-Type', 'text/html; charset=utf-8');
+	const headers = await getHeaders(config.headers, current, absolutePath, null);
+	headers['Content-Type'] = 'text/html; charset=utf-8';
+
+	response.writeHead(statusCode, headers);
 	response.end(errorTemplate({statusCode, message}));
 };
 
@@ -501,7 +508,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	try {
 		relativePath = decodeURIComponent(url.parse(request.url).pathname);
 	} catch (err) {
-		return sendError(response, acceptsJSON, current, handlers, config, {
+		return sendError('/', response, acceptsJSON, current, handlers, config, {
 			statusCode: 400,
 			code: 'bad_request',
 			message: 'Bad Request'
@@ -513,7 +520,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	// Prevent path traversal vulnerabilities. We could do this
 	// by ourselves, but using the package covers all the edge cases.
 	if (!isPathInside(absolutePath, current)) {
-		return sendError(response, acceptsJSON, current, handlers, config, {
+		return sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
 			statusCode: 400,
 			code: 'bad_request',
 			message: 'Bad Request'
@@ -551,7 +558,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			stats = await handlers.stat(absolutePath);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
-				return internalError(response, acceptsJSON, current, handlers, config, err);
+				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 			}
 		}
 	}
@@ -567,7 +574,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			}
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
-				return internalError(response, acceptsJSON, current, handlers, config, err);
+				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 			}
 		}
 	}
@@ -577,7 +584,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			stats = await handlers.stat(absolutePath);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
-				return internalError(response, acceptsJSON, current, handlers, config, err);
+				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 			}
 		}
 	}
@@ -599,7 +606,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			}
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
-				return internalError(response, acceptsJSON, current, handlers, config, err);
+				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 			}
 		}
 
@@ -621,7 +628,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	}
 
 	if (!stats) {
-		return sendError(response, acceptsJSON, current, handlers, config, {
+		return sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
 			statusCode: 404,
 			code: 'not_found',
 			message: 'The requested path could not be found'
