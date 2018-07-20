@@ -246,6 +246,14 @@ This is disabled by default and can be enabled like this:
 
 After that, if you access your directory `/test` (for example), you will see an image being rendered if the directory contains a single image file.
 
+## Error templates
+
+The handler will automatically determine the right error format if one occurs and then sends it to the client in that format.
+
+Furthermore, this allows you to not just specifiy an error template for `404` errors, but also for all other errors that can occur (e.g. `400` or `500`).
+
+Just add a `<status-code>.html` file to the root directory and you're good.
+
 ## Middleware
 
 If you want to replace the methods the package is using for interacting with the file system, you can pass them as the fourth argument to the function call.
