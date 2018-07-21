@@ -998,3 +998,36 @@ test('error responses get custom headers', async t => {
 	t.is(text, content);
 });
 
+test('modify config in `createReadStream` handler', async t => {
+	const name = '.dotfile';
+	const related = path.join(fixturesFull, name);
+	const content = await fs.readFile(related, 'utf8');
+
+	const config = {
+		headers: []
+	};
+
+	const header = {
+		key: 'X-Custom-Header',
+		value: 'test'
+	};
+
+	const url = await getUrl(config, {
+		createReadStream: async file => {
+			config.headers.unshift({
+				source: name,
+				headers: [header]
+			});
+
+			return fs.createReadStream(file);
+		}
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+	const output = response.headers.get(header.key);
+
+	t.deepEqual(content, text);
+	t.deepEqual(output, header.value);
+});
+
