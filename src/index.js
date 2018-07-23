@@ -630,10 +630,6 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (!stats) {
 		// allow for custom 404 handling
-		const headers = await getHeaders(config.headers, current, absolutePath, stats);
-		Object.keys(headers).forEach(key => {
-			response.setHeader(key, headers[key]);
-		});
 		return handlers.sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
 			statusCode: 404,
 			code: 'not_found',
