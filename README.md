@@ -256,7 +256,7 @@ Just add a `<status-code>.html` file to the root directory and you're good.
 
 ## Middleware
 
-If you want to replace the methods the package is using for interacting with the file system, you can pass them as the fourth argument to the function call.
+If you want to replace the methods the package is using for interacting with the file system and sending responses, you can pass them as the fourth argument to the function call.
 
 These are the methods used by the package (they can all return a `Promise` or be asynchronous):
 
@@ -264,7 +264,8 @@ These are the methods used by the package (they can all return a `Promise` or be
 await handler(request, response, undefined, {
   stat(path) {},
   createReadStream(path) {},
-  readdir(path) {}
+  readdir(path) {},
+  sendError(absolutePath, response, acceptsJSON, root, handlers, config, error) {}
 });
 ```
 

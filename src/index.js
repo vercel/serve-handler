@@ -17,12 +17,6 @@ const isPathInside = require('path-is-inside');
 const directoryTemplate = require('./directory');
 const errorTemplate = require('./error');
 
-const getHandlers = methods => Object.assign({
-	stat: promisify(stat),
-	createReadStream: createReadStream,
-	readdir: promisify(readdir)
-}, methods);
-
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
 	const slashed = slasher(source);
@@ -493,6 +487,13 @@ const internalError = async (...args) => {
 	return sendError(...args);
 };
 
+const getHandlers = methods => Object.assign({
+	stat: promisify(stat),
+	createReadStream,
+	readdir: promisify(readdir),
+	sendError
+}, methods);
+
 module.exports = async (request, response, config = {}, methods = {}) => {
 	const cwd = process.cwd();
 	const current = config.public ? path.join(cwd, config.public) : cwd;
@@ -628,7 +629,8 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	}
 
 	if (!stats) {
-		return sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
+		// allow for custom 404 handling
+		return handlers.sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
 			statusCode: 404,
 			code: 'not_found',
 			message: 'The requested path could not be found'
