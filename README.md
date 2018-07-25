@@ -182,6 +182,8 @@ Allows you to set custom headers (and overwrite the default ones) for certain pa
 }
 ```
 
+If you define the `ETag` header for a path, the handler will automatically reply with status code `304` for that path if a request comes in with a matching `If-None-Match` header.
+
 **NOTE:** The paths can only contain globs that are matched using [minimatch](https://github.com/isaacs/minimatch).
 
 ### directoryListing (Boolean|Array)
