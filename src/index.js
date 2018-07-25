@@ -640,6 +640,13 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const stream = await handlers.createReadStream(absolutePath);
 	const headers = await getHeaders(config.headers, current, absolutePath, stats);
 
+	if (!request.headers.range && headers.ETag && headers.ETag === request.headers['if-none-match']) {
+		response.statusCode = 304;
+		response.end();
+
+		return;
+	}
+
 	response.writeHead(response.statusCode || 200, headers);
 	stream.pipe(response);
 };
