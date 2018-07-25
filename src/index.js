@@ -640,6 +640,19 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const stream = await handlers.createReadStream(absolutePath);
 	const headers = await getHeaders(config.headers, current, absolutePath, stats);
 
+	// We need to check for `headers.ETag` being truthy first, otherwise it will
+	// match `undefined` being equal to `undefined`, which is true.
+	//
+	// Checking for `undefined` and `null` is also important, because `Range` can be `0`.
+	//
+	// eslint-disable-next-line no-eq-null
+	if (request.headers.range == null && headers.ETag && headers.ETag === request.headers['if-none-match']) {
+		response.statusCode = 304;
+		response.end();
+
+		return;
+	}
+
 	response.writeHead(response.statusCode || 200, headers);
 	stream.pipe(response);
 };

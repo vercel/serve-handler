@@ -1031,3 +1031,41 @@ test('modify config in `createReadStream` handler', async t => {
 	t.deepEqual(output, header.value);
 });
 
+test('automatically handle ETag headers for normal files', async t => {
+	const name = 'object.json';
+	const related = path.join(fixturesFull, name);
+	const content = await fs.readJSON(related);
+	const value = 'd2ijdjoi29f3h3232';
+
+	const url = await getUrl({
+		headers: [{
+			source: '**',
+			headers: [{
+				key: 'ETag',
+				value
+			}]
+		}]
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const {headers} = response;
+
+	const type = headers.get('content-type');
+	const eTag = headers.get('etag');
+
+	t.is(type, 'application/json; charset=utf-8');
+	t.is(eTag, value);
+
+	const text = await response.text();
+	const spec = JSON.parse(text);
+
+	t.deepEqual(spec, content);
+
+	const cacheResponse = await fetch(`${url}/${name}`, {
+		headers: {
+			'if-none-match': value
+		}
+	});
+
+	t.is(cacheResponse.status, 304);
+});
