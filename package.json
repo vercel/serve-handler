@@ -69,6 +69,7 @@
     "mime-types": "2.1.18",
     "minimatch": "3.0.4",
     "path-is-inside": "1.0.2",
-    "path-to-regexp": "2.2.1"
+    "path-to-regexp": "2.2.1",
+    "range-parser": "1.2.0"
   }
 }
