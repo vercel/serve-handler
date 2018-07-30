@@ -1,6 +1,6 @@
 {
   "name": "serve-handler",
-  "version": "3.6.0",
+  "version": "3.6.1",
   "description": "The routing foundation of `serve` and static deployments on Now",
   "main": "src/index.js",
   "scripts": {
