@@ -28,6 +28,13 @@ const sourceMatches = (source, requestPath, allowSegments) => {
 		const expression = pathToRegExp(normalized, keys);
 
 		results = expression.exec(requestPath);
+
+		if (!results) {
+			// clear keys so that they are not used
+			// later with empty results. this may
+			// happen if minimatch returns true
+			keys.length = 0;
+		}
 	}
 
 	if (results || minimatch(requestPath, slashed)) {

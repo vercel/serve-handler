@@ -406,6 +406,25 @@ test('set `redirects` config property to one-star wildcard path', async t => {
 	t.is(location, `${url}/${destination}`);
 });
 
+test('set `redirects` config property to extglob wildcard path', async t => {
+	const destination = 'testing';
+
+	const url = await getUrl({
+		redirects: [{
+			source: 'face/+(mask1|mask2)/ideal',
+			destination
+		}]
+	 });
+
+	const response = await fetch(`${url}/face/mask1/ideal`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url}/${destination}`);
+});
+
 test('set `redirects` config property to path segment', async t => {
 	const url = await getUrl({
 		redirects: [{
