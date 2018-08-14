@@ -1089,6 +1089,53 @@ test('automatically handle ETag headers for normal files', async t => {
 	t.is(cacheResponse.status, 304);
 });
 
+test('range request without size', async t => {
+	const name = 'docs.md';
+	const related = path.join(fixturesFull, name);
+	const content = await fs.readFile(related);
+
+	const config = {
+		headers: []
+	};
+
+	const url = await getUrl(config, {
+		stat: async location => {
+			const stats = await fs.stat(location);
+
+			config.headers.unshift({
+				source: '*',
+				headers: [
+					{
+						key: 'Content-Length',
+						value: stats.size
+					}
+				]
+			});
+
+			stats.size = null;
+			return stats;
+		}
+	});
+
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			Range: 'bytes=0-10'
+		}
+	});
+
+	const range = response.headers.get('content-range');
+	const length = Number(response.headers.get('content-length'));
+
+	t.is(range, null);
+
+	// The full document is sent back
+	t.is(length, 27);
+	t.is(response.status, 200);
+
+	const text = await response.text();
+	t.is(text, content.toString());
+});
+
 test('range request', async t => {
 	const name = 'docs.md';
 	const related = path.join(fixturesFull, name);

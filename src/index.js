@@ -649,7 +649,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const streamOpts = {};
 
 	// TODO ? if-range
-	if (request.headers.range) {
+	if (request.headers.range && stats.size) {
 		const range = parseRange(stats.size, request.headers.range);
 
 		if (typeof range === 'object' && range.type === 'bytes') {
