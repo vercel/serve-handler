@@ -265,11 +265,13 @@ These are the methods used by the package (they can all return a `Promise` or be
 ```js
 await handler(request, response, undefined, {
   stat(path) {},
-  createReadStream(path) {},
+  createReadStream(path, config) {}
   readdir(path) {},
   sendError(absolutePath, response, acceptsJSON, root, handlers, config, error) {}
 });
 ```
+
+**NOTE:** It's important that – for native methods like `createReadStream` – all arguments are passed on to the native call.
 
 ## Use Cases
 

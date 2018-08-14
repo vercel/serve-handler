@@ -12,6 +12,7 @@ const mime = require('mime-types');
 const bytes = require('bytes');
 const contentDisposition = require('content-disposition');
 const isPathInside = require('path-is-inside');
+const parseRange = require('range-parser');
 
 // Other
 const directoryTemplate = require('./directory');
@@ -204,7 +205,8 @@ const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 			// only happens if it cannot find a appropiate value.
 			'Content-Disposition': contentDisposition(base, {
 				type: 'inline'
-			})
+			}),
+			'Accept-Ranges': 'bytes'
 		};
 
 		const contentType = mime.contentType(base);
@@ -644,8 +646,34 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		});
 	}
 
-	const stream = await handlers.createReadStream(absolutePath);
+	const streamOpts = {};
+
+	// TODO ? if-range
+	if (request.headers.range) {
+		const range = parseRange(stats.size, request.headers.range);
+
+		if (typeof range === 'object' && range.type === 'bytes') {
+			const {start, end} = range[0];
+			streamOpts.start = start;
+			streamOpts.end = end;
+
+			response.statusCode = 206;
+		} else {
+			response.statusCode = 416;
+			response.setHeader('Content-Range', `bytes */${stats.size}`);
+		}
+	}
+
+	// TODO ? multiple ranges
+
+	const stream = await handlers.createReadStream(absolutePath, streamOpts);
 	const headers = await getHeaders(config.headers, current, absolutePath, stats);
+
+	// eslint-disable-next-line no-undefined
+	if (streamOpts.start !== undefined && streamOpts.end !== undefined) {
+		headers['Content-Range'] = `bytes ${streamOpts.start}-${streamOpts.end}/${stats.size}`;
+		headers['Content-Length'] = streamOpts.end - streamOpts.start + 1;
+	}
 
 	// We need to check for `headers.ETag` being truthy first, otherwise it will
 	// match `undefined` being equal to `undefined`, which is true.

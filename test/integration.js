@@ -888,9 +888,9 @@ test('set `createReadStream` handler to async function', async t => {
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		createReadStream: async file => {
+		createReadStream: async (file, opts) => {
 			await sleep(2000);
-			return fs.createReadStream(file);
+			return fs.createReadStream(file, opts);
 		}
 	});
 
@@ -1032,13 +1032,13 @@ test('modify config in `createReadStream` handler', async t => {
 	};
 
 	const url = await getUrl(config, {
-		createReadStream: async file => {
+		createReadStream: async (file, opts) => {
 			config.headers.unshift({
 				source: name,
 				headers: [header]
 			});
 
-			return fs.createReadStream(file);
+			return fs.createReadStream(file, opts);
 		}
 	});
 
@@ -1087,4 +1087,50 @@ test('automatically handle ETag headers for normal files', async t => {
 	});
 
 	t.is(cacheResponse.status, 304);
+});
+
+test('range request', async t => {
+	const name = 'docs.md';
+	const related = path.join(fixturesFull, name);
+
+	const content = await fs.readFile(related);
+	const url = await getUrl();
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			Range: 'bytes=0-10'
+		}
+	});
+
+	const range = response.headers.get('content-range');
+	const length = Number(response.headers.get('content-length'));
+	t.is(range, `bytes 0-10/${content.length}`);
+	t.is(length, 11);
+	t.is(response.status, 206);
+
+	const text = await response.text();
+	const spec = content.toString().substr(0, 11);
+	t.is(text, spec);
+});
+
+test('range request not satisfiable', async t => {
+	const name = 'docs.md';
+	const related = path.join(fixturesFull, name);
+
+	const content = await fs.readFile(related);
+	const url = await getUrl();
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			Range: 'bytes=10-1'
+		}
+	});
+
+	const range = response.headers.get('content-range');
+	const length = Number(response.headers.get('content-length'));
+	t.is(range, `bytes */${content.length}`);
+	t.is(length, content.length);
+	t.is(response.status, 416);
+
+	const text = await response.text();
+	const spec = content.toString();
+	t.is(text, spec);
 });
