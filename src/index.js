@@ -216,7 +216,15 @@ const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 		}
 	}
 
-	return Object.assign(defaultHeaders, related);
+	const headers = Object.assign(defaultHeaders, related);
+
+	for (const key in headers) {
+		if (headers.hasOwnProperty(key) && headers[key] === null) {
+			delete headers[key];
+		}
+	}
+
+	return headers;
 };
 
 const applicable = (decodedPath, configEntry) => {
