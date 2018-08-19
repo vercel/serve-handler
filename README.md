@@ -177,8 +177,8 @@ Allows you to set custom headers (and overwrite the default ones) for certain pa
         "key" : "Cache-Control",
         "value" : "max-age=300"
       }]
-    }]
-  }
+    }
+  ]
 }
 ```
 
