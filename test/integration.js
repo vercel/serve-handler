@@ -1181,3 +1181,28 @@ test('range request not satisfiable', async t => {
 	const spec = content.toString();
 	t.is(text, spec);
 });
+
+test('remove header when null', async t => {
+	const key = 'Cache-Control';
+	const value = 'max-age=7200';
+
+	const list = [{
+		source: 'object.json',
+		headers: [{
+			key: key,
+			value: value
+		}, {
+			key: key,
+			value: null
+		}]
+	}];
+
+	const url = await getUrl({
+		headers: list
+	});
+
+	const {headers} = await fetch(`${url}/object.json`);
+	const cacheControl = headers.get(key);
+
+	t.falsy(cacheControl);
+});
