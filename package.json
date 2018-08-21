@@ -65,7 +65,7 @@
     "bytes": "3.0.0",
     "content-disposition": "0.5.2",
     "fast-url-parser": "1.1.3",
-    "glob-slasher": "1.0.1",
+    "glob-slash": "1.0.0",
     "mime-types": "2.1.18",
     "minimatch": "3.0.4",
     "path-is-inside": "1.0.2",
