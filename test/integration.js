@@ -1206,3 +1206,104 @@ test('remove header when null', async t => {
 
 	t.falsy(cacheControl);
 });
+
+test('render directory index (default index)', async t => {
+	const target = 'indexes-directory';
+	const index = path.join(fixturesFull, `${target}/index.html`);
+
+	const url = await getUrl({
+		cleanUrls: false,
+		renderIndex: true
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const content = await fs.readFile(index, 'utf8');
+	const text = await response.text();
+
+	t.is(content, text);
+});
+
+test('render directory index (string value)', async t => {
+	const target = 'indexes-directory';
+	const index = path.join(fixturesFull, `${target}/index.htm`);
+
+	const url = await getUrl({
+		cleanUrls: false,
+		renderIndex: 'index.htm'
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const content = await fs.readFile(index, 'utf8');
+	const text = await response.text();
+
+	t.is(content, text);
+});
+
+test('render directory index (specific)', async t => {
+	const target = 'indexes-directory';
+	const index = path.join(fixturesFull, `${target}/index.htm`);
+
+	const url = await getUrl({
+		cleanUrls: false,
+		renderIndex: ['index.htm']
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const content = await fs.readFile(index, 'utf8');
+	const text = await response.text();
+
+	t.is(content, text);
+});
+
+test('render directory index (priority element)', async t => {
+	const target = 'indexes-directory';
+	const index = path.join(fixturesFull, `${target}/index.txt`);
+
+	const url = await getUrl({
+		cleanUrls: false,
+		renderIndex: ['index.txt', 'index.htm', 'index.html']
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const content = await fs.readFile(index, 'utf8');
+	const text = await response.text();
+	const type = response.headers.get('content-type');
+
+	t.is(content, text);
+	t.is(type, 'text/plain; charset=utf-8');
+});
+
+test('render directory index (directoryListing=false and not index found)', async t => {
+	const target = 'indexes-directory';
+
+	const url = await getUrl({
+		cleanUrls: false,
+		directoryListing: false,
+		renderIndex: ['index', 'index.js', 'index.page']
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const type = response.headers.get('content-type');
+
+	t.is(type, 'text/html; charset=utf-8');
+	t.is(response.status, 404);
+});
+
+test('render directory index (directoryListing=true)', async t => {
+	const target = 'indexes-directory';
+	const listingContents = await getDirectoryContents(`${fixturesFull}/${target}`);
+
+	const url = await getUrl({
+		cleanUrls: false,
+		directoryListing: true,
+		renderIndex: ['index', 'index.js', 'index.page']
+	});
+
+	const response = await fetch(`${url}/${target}`);
+	const type = response.headers.get('content-type');
+	const text = await response.text();
+
+	t.is(type, 'text/html; charset=utf-8');
+	t.is(response.status, 200);
+	t.true(listingContents.every(item => text.includes(item)));
+});

@@ -297,7 +297,7 @@ const canBeListed = (excluded, file) => {
 };
 
 const renderDirectory = async (current, acceptsJSON, handlers, methods, config, paths) => {
-	const {directoryListing, trailingSlash, unlisted = [], renderSingle} = config;
+	const {directoryListing, trailingSlash, unlisted = [], renderSingle, renderIndex} = config;
 	const slashSuffix = typeof trailingSlash === 'boolean' ? (trailingSlash ? '/' : '') : '/';
 	const {relativePath, absolutePath} = paths;
 
@@ -307,13 +307,22 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		...unlisted
 	];
 
-	if (!applicable(relativePath, directoryListing) && !renderSingle) {
+	const canDirectoryListing = applicable(relativePath, directoryListing);
+	if (!canDirectoryListing && !renderSingle && !renderIndex) {
 		return {};
 	}
 
 	let files = await handlers.readdir(absolutePath);
 
-	const canRenderSingle = renderSingle && (files.length === 1);
+	const canRenderSingle = !renderIndex && renderSingle && (files.length === 1);
+
+	const indexFiles = [];
+	let indexFilesName = null;
+	if (renderIndex) {
+		indexFilesName = Array.isArray(renderIndex)
+			? renderIndex
+			: (typeof renderIndex === 'boolean' ? ['index.html'] : [renderIndex]);
+	}
 
 	for (let index = 0; index < files.length; index++) {
 		const file = files[index];
@@ -339,7 +348,16 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			details.relative += slashSuffix;
 			details.type = 'directory';
 		} else {
-			if (canRenderSingle) {
+			if (renderIndex) {
+				const fileIndex = indexFilesName.indexOf(file);
+				if (fileIndex > -1) {
+					indexFiles[fileIndex] = {
+						singleFile: true,
+						absolutePath: filePath,
+						stats
+					};
+				}
+			} else if (canRenderSingle) {
 				return {
 					singleFile: true,
 					absolutePath: filePath,
@@ -363,6 +381,14 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		} else {
 			delete files[index];
 		}
+	}
+
+	if (!canDirectoryListing && renderIndex && indexFiles.length === 0) {
+		return {};
+	}
+
+	if (renderIndex && indexFiles.length > 0) {
+		return indexFiles.filter(Object).shift();
 	}
 
 	const toRoot = path.relative(current, absolutePath);
