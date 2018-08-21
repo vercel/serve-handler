@@ -513,7 +513,7 @@ const getHandlers = methods => Object.assign({
 
 module.exports = async (request, response, config = {}, methods = {}) => {
 	const cwd = process.cwd();
-	const current = config.public ? path.join(cwd, config.public) : cwd;
+	const current = config.public ? path.resolve(cwd, config.public) : cwd;
 	const handlers = getHandlers(methods);
 
 	let relativePath = null;
