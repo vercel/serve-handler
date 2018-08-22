@@ -60,13 +60,21 @@ You can use any of the following options:
 
 ### public (String)
 
-By default, the current working directory will be served. If you only want to serve a specific path, you can use this options to pass a custom directory to be served relative to the current working directory.
+By default, the current working directory will be served. If you only want to serve a specific path, you can use this options to pass an absolute path or a custom directory to be served relative to the current working directory.
 
 For example, if serving a [Jekyll](https://jekyllrb.com/) app, it would look like this:
 
 ```json
 {
   "public": "_site"
+}
+```
+
+Using absolute path:
+
+```json
+{
+  "public": "/path/to/your/_site"
 }
 ```
 
@@ -183,6 +191,8 @@ Allows you to set custom headers (and overwrite the default ones) for certain pa
 ```
 
 If you define the `ETag` header for a path, the handler will automatically reply with status code `304` for that path if a request comes in with a matching `If-None-Match` header.
+
+If you set a header `value` to `null` it removes any previous defined header with the same key.
 
 **NOTE:** The paths can only contain globs that are matched using [minimatch](https://github.com/isaacs/minimatch).
 
