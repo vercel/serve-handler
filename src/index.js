@@ -468,8 +468,7 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 		stats = await handlers.stat(errorPage);
 	} catch (err) {
 		if (err.code !== 'ENOENT') {
-			// eslint-disable-next-line no-use-before-define
-			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+			console.error(err);
 		}
 	}
 
@@ -478,17 +477,16 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 
 		try {
 			stream = await handlers.createReadStream(errorPage);
+
+			const headers = await getHeaders(config.headers, current, errorPage, stats);
+
+			response.writeHead(statusCode, headers);
+			stream.pipe(response);
+
+			return;
 		} catch (err) {
-			// eslint-disable-next-line no-use-before-define
-			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+			console.error(err);
 		}
-
-		const headers = await getHeaders(config.headers, current, errorPage, stats);
-
-		response.writeHead(statusCode, headers);
-		stream.pipe(response);
-
-		return;
 	}
 
 	const headers = await getHeaders(config.headers, current, absolutePath, null);
