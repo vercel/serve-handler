@@ -587,14 +587,12 @@ test('receive custom `404.html` error page', async t => {
 	t.is(text.trim(), '<span>Not Found</span>');
 });
 
-test('receive error because reading `404.html` failed', async t => {
-	const message = 'Internal Server Error';
-
+test('error is still sent back even if reading `404.html` failed', async t => {
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
 		stat: location => {
 			if (path.basename(location) === '404.html') {
-				throw new Error(message);
+				throw new Error('Any error occured while checking the file');
 			}
 
 			return fs.stat(location);
@@ -604,11 +602,11 @@ test('receive error because reading `404.html` failed', async t => {
 	const response = await fetch(`${url}/not-existing`);
 	const text = await response.text();
 
-	t.is(response.status, 500);
+	t.is(response.status, 404);
 
 	const content = errorTemplate({
-		statusCode: 500,
-		message: 'A server error has occurred'
+		statusCode: 404,
+		message: 'The requested path could not be found'
 	});
 
 	t.is(text, content);
@@ -1234,3 +1232,29 @@ test('errors in `createReadStream` get handled', async t => {
 	t.deepEqual(content, text);
 	t.deepEqual(response.status, 500);
 });
+
+test('log error when checking `404.html` failed', async t => {
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		createReadStream: (location, opts) => {
+			if (path.basename(location) === '404.html') {
+				throw new Error('Any error occured while checking the file');
+			}
+
+			return fs.createReadStream(location, opts);
+		}
+	});
+
+	const response = await fetch(`${url}/not-existing`);
+	const text = await response.text();
+
+	t.is(response.status, 404);
+
+	const content = errorTemplate({
+		statusCode: 404,
+		message: 'The requested path could not be found'
+	});
+
+	t.is(text, content);
+});
+
