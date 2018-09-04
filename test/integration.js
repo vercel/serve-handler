@@ -1142,6 +1142,7 @@ test('range request', async t => {
 
 	const content = await fs.readFile(related);
 	const url = await getUrl();
+
 	const response = await fetch(`${url}/${name}`, {
 		headers: {
 			Range: 'bytes=0-10'
@@ -1150,12 +1151,14 @@ test('range request', async t => {
 
 	const range = response.headers.get('content-range');
 	const length = Number(response.headers.get('content-length'));
+
 	t.is(range, `bytes 0-10/${content.length}`);
 	t.is(length, 11);
 	t.is(response.status, 206);
 
 	const text = await response.text();
 	const spec = content.toString().substr(0, 11);
+
 	t.is(text, spec);
 });
 
@@ -1165,6 +1168,7 @@ test('range request not satisfiable', async t => {
 
 	const content = await fs.readFile(related);
 	const url = await getUrl();
+
 	const response = await fetch(`${url}/${name}`, {
 		headers: {
 			Range: 'bytes=10-1'
@@ -1173,12 +1177,14 @@ test('range request not satisfiable', async t => {
 
 	const range = response.headers.get('content-range');
 	const length = Number(response.headers.get('content-length'));
+
 	t.is(range, `bytes */${content.length}`);
 	t.is(length, content.length);
 	t.is(response.status, 416);
 
 	const text = await response.text();
 	const spec = content.toString();
+
 	t.is(text, spec);
 });
 
@@ -1205,4 +1211,26 @@ test('remove header when null', async t => {
 	const cacheControl = headers.get(key);
 
 	t.falsy(cacheControl);
+});
+
+test('errors in `createReadStream` get handled', async t => {
+	const name = '.dotfile';
+
+	// eslint-disable-next-line no-undefined
+	const url = await getUrl(undefined, {
+		createReadStream: () => {
+			throw new Error('This is a test');
+		}
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+
+	const content = errorTemplate({
+		statusCode: 500,
+		message: 'A server error has occurred'
+	});
+
+	t.deepEqual(content, text);
+	t.deepEqual(response.status, 500);
 });

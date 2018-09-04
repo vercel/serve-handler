@@ -474,8 +474,16 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 	}
 
 	if (stats) {
+		let stream = null;
+
+		try {
+			stream = await handlers.createReadStream(errorPage);
+		} catch (err) {
+			// eslint-disable-next-line no-use-before-define
+			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+		}
+
 		const headers = await getHeaders(config.headers, current, errorPage, stats);
-		const stream = await handlers.createReadStream(errorPage);
 
 		response.writeHead(statusCode, headers);
 		stream.pipe(response);
@@ -674,7 +682,14 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	// TODO ? multiple ranges
 
-	const stream = await handlers.createReadStream(absolutePath, streamOpts);
+	let stream = null;
+
+	try {
+		stream = await handlers.createReadStream(absolutePath, streamOpts);
+	} catch (err) {
+		return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+	}
+
 	const headers = await getHeaders(config.headers, current, absolutePath, stats);
 
 	// eslint-disable-next-line no-undefined
