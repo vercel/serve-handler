@@ -2,6 +2,7 @@
 const {promisify} = require('util');
 const path = require('path');
 const {stat, createReadStream, readdir} = require('fs');
+const stream = require('stream');
 
 // Packages
 const url = require('fast-url-parser');
@@ -13,10 +14,20 @@ const bytes = require('bytes');
 const contentDisposition = require('content-disposition');
 const isPathInside = require('path-is-inside');
 const parseRange = require('range-parser');
+const streamqueue = require('streamqueue');
 
 // Other
 const directoryTemplate = require('./directory');
 const errorTemplate = require('./error');
+
+const createStreamFromString = str => {
+	const s = new stream.Readable();
+	s.push(str);
+	s.push(null);
+	return s;
+};
+
+const lengthOfNumber = n => (n === 0 ? 1 : Math.ceil(Math.log(n + 1) / Math.LN10));
 
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
@@ -475,10 +486,10 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 
 	if (stats) {
 		const headers = await getHeaders(config.headers, current, errorPage, stats);
-		const stream = await handlers.createReadStream(errorPage);
+		const errorStream = await handlers.createReadStream(errorPage);
 
 		response.writeHead(statusCode, headers);
-		stream.pipe(response);
+		errorStream.pipe(response);
 
 		return;
 	}
@@ -654,33 +665,45 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		});
 	}
 
-	const streamOpts = {};
-
-	// TODO ? if-range
+	let ranges;
 	if (request.headers.range && stats.size) {
 		const range = parseRange(stats.size, request.headers.range);
 
 		if (typeof range === 'object' && range.type === 'bytes') {
-			const {start, end} = range[0];
-			streamOpts.start = start;
-			streamOpts.end = end;
-
 			response.statusCode = 206;
+			ranges = Array.from(range);
 		} else {
 			response.statusCode = 416;
 			response.setHeader('Content-Range', `bytes */${stats.size}`);
 		}
 	}
 
-	// TODO ? multiple ranges
-
-	const stream = await handlers.createReadStream(absolutePath, streamOpts);
 	const headers = await getHeaders(config.headers, current, absolutePath, stats);
 
-	// eslint-disable-next-line no-undefined
-	if (streamOpts.start !== undefined && streamOpts.end !== undefined) {
-		headers['Content-Range'] = `bytes ${streamOpts.start}-${streamOpts.end}/${stats.size}`;
-		headers['Content-Length'] = streamOpts.end - streamOpts.start + 1;
+	const BOUNDARY = 'THIS_STRING_SEPARATES';
+
+	// In multipart responses, there is no "global" Content-Type, but every part
+	// specifies it's own Content-Type.
+	const oldContentType = headers['Content-Type'];
+	if (ranges) {
+		if (ranges.length === 1) {
+			headers['Content-Range'] = `bytes ${ranges[0].start}-${ranges[0].end}/${stats.size}`;
+			headers['Content-Length'] = ranges[0].end - ranges[0].start + 1;
+		} else {
+			const sizeLength = lengthOfNumber(stats.size);
+			const contentTypeLength = oldContentType ? oldContentType.length : 0;
+			headers['Content-Type'] = `multipart/byteranges; boundary=${BOUNDARY}`;
+			// We want to pipe the data stream directly, so the body can't be saved into a string
+			// to determine it's length.
+			headers['Content-Length'] = ranges.reduce((acc, {start, end}) =>
+				acc +
+				2 + BOUNDARY.length + 2 + // 2 dashes + boundary + CRLF
+				(contentTypeLength ? (14 + contentTypeLength + 2) : 0) + // "Content-Type: xxx" + CRLF (optional)
+				21 + lengthOfNumber(start) + 1 + lengthOfNumber(end) + 1 + sizeLength + 2 + // "Content-Range: bytes xxx-xxx/xxx" + CRLF
+				2 + // empty line (CRLF)
+				(end - start + 1) + 2 // data length + CRLF
+				, 0) + 2 + BOUNDARY.length + 2; // 2 dashes + boundary + 2 dashes
+		}
 	}
 
 	// We need to check for `headers.ETag` being truthy first, otherwise it will
@@ -697,5 +720,28 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	}
 
 	response.writeHead(response.statusCode || 200, headers);
-	stream.pipe(response);
+	if (ranges && ranges.length > 1) {
+		const streams = await Promise.all(
+			ranges.reduce((acc, {start, end}, i) => {
+				acc.push(createStreamFromString(
+					`${i === 0 ? '' : '\r\n'}--${BOUNDARY}\r\n${
+						oldContentType ? `Content-Type: ${oldContentType}\r\n` : ''
+					}Content-Range: bytes ${start}-${end}/${stats.size}` + `\r\n\r\n`
+				));
+				acc.push(handlers.createReadStream(absolutePath, {start, end}));
+				return acc;
+			}, [])
+		);
+		const lastBoundary = createStreamFromString(`\r\n--${BOUNDARY}--`);
+		// `streamqueue` returns a Readable stream that outputs all it`s arguments in order
+		streamqueue(...streams, lastBoundary).pipe(response);
+	} else {
+		const streamOpts = {};
+		if (ranges) {
+			streamOpts.start = ranges[0].start;
+			streamOpts.end = ranges[0].end;
+		}
+		const fileStream = await handlers.createReadStream(absolutePath, streamOpts);
+		fileStream.pipe(response);
+	}
 };

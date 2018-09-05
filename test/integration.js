@@ -1182,6 +1182,41 @@ test('range request not satisfiable', async t => {
 	t.is(text, spec);
 });
 
+test('range request: multipart', async t => {
+	const name = 'object.json';
+	const related = path.join(fixturesFull, name);
+
+	const content = await fs.readFile(related);
+	const url = await getUrl();
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			Range: 'bytes=0-10, 20-40'
+		}
+	});
+
+	const spec = `--THIS_STRING_SEPARATES\r
+Content-Type: application/json; charset=utf-8\r
+Content-Range: bytes 0-10/${content.length}\r
+\r
+${content.toString().substring(0, 11)}\r
+--THIS_STRING_SEPARATES\r
+Content-Type: application/json; charset=utf-8\r
+Content-Range: bytes 20-40/${content.length}\r
+\r
+${content.toString().substring(20, 41)}\r
+--THIS_STRING_SEPARATES--`;
+
+
+	const range = response.headers.get('content-range');
+	const length = Number(response.headers.get('content-length'));
+	t.falsy(range);
+	t.is(length, spec.length);
+	t.is(response.status, 206);
+
+	const text = await response.text();
+	t.is(text, spec);
+});
+
 test('remove header when null', async t => {
 	const key = 'Cache-Control';
 	const value = 'max-age=7200';
