@@ -684,33 +684,10 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
-	const headers = await getHeaders(config.headers, current, absolutePath, stats);
-
 	const BOUNDARY = 'THIS_STRING_SEPARATES';
 
-	// In multipart responses, there is no "global" Content-Type, but every part
-	// specifies it's own Content-Type.
-	const oldContentType = headers['Content-Type'];
-	if (ranges) {
-		if (ranges.length === 1) {
-			headers['Content-Range'] = `bytes ${ranges[0].start}-${ranges[0].end}/${stats.size}`;
-			headers['Content-Length'] = ranges[0].end - ranges[0].start + 1;
-		} else {
-			const sizeLength = lengthOfNumber(stats.size);
-			const contentTypeLength = oldContentType ? oldContentType.length : 0;
-			headers['Content-Type'] = `multipart/byteranges; boundary=${BOUNDARY}`;
-			// We want to pipe the data stream directly, so the body can't be saved into a string
-			// to determine it's length.
-			headers['Content-Length'] = ranges.reduce((acc, {start, end}) =>
-				acc +
-				2 + BOUNDARY.length + 2 + // 2 dashes + boundary + CRLF
-				(contentTypeLength ? (14 + contentTypeLength + 2) : 0) + // "Content-Type: xxx" + CRLF (optional)
-				21 + lengthOfNumber(start) + 1 + lengthOfNumber(end) + 1 + sizeLength + 2 + // "Content-Range: bytes xxx-xxx/xxx" + CRLF
-				2 + // empty line (CRLF)
-				(end - start + 1) + 2 // data length + CRLF
-				, 0) + 2 + BOUNDARY.length + 2; // 2 dashes + boundary + 2 dashes
-		}
-	}
+
+	const headers = await getHeaders(config.headers, current, absolutePath, stats);
 
 	// We need to check for `headers.ETag` being truthy first, otherwise it will
 	// match `undefined` being equal to `undefined`, which is true.
@@ -725,8 +702,33 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return;
 	}
 
-	response.writeHead(response.statusCode || 200, headers);
+	// In multipart responses, there is no "global" Content-Type, but every part
+	// specifies it's own Content-Type.
+	const oldContentType = headers['Content-Type'];
+	if (ranges) {
+		if (ranges.length === 1) {
+			headers['Content-Range'] = `bytes ${ranges[0].start}-${ranges[0].end}/${stats.size}`;
+			headers['Content-Length'] = ranges[0].end - ranges[0].start + 1;
+		} else {
+			const sizeLength = lengthOfNumber(stats.size);
+			const contentTypeLength = oldContentType ? oldContentType.length : 0;
+			headers['Content-Type'] = `multipart/byteranges; boundary=${BOUNDARY}`;
+			// We want to pipe the data stream directly, so the body can't be saved into a string
+			// to determine it's length - calculating it instead.
+			headers['Content-Length'] = ranges.reduce((acc, {start, end}) =>
+				acc +
+				2 + BOUNDARY.length + 2 + // 2 dashes + boundary + CRLF
+				(contentTypeLength ? (14 + contentTypeLength + 2) : 0) + // "Content-Type: xxx" + CRLF (optional)
+				21 + lengthOfNumber(start) + 1 + lengthOfNumber(end) + 1 + sizeLength + 2 + // "Content-Range: bytes xxx-xxx/xxx" + CRLF
+				2 + // empty line (CRLF)
+				(end - start + 1) + 2 // data length + CRLF
+				, 0) + 2 + BOUNDARY.length + 2; // 2 dashes + boundary + 2 dashes
+		}
+	}
+
+	let dataStream = null;
 	if (ranges && ranges.length > 1) {
+		// A multipart range response
 		let streams = null;
 		try {
 			streams = await Promise.all(
@@ -748,22 +750,22 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 		const lastBoundary = createStreamFromString(`\r\n--${BOUNDARY}--`);
 		// `streamqueue` returns a Readable stream that outputs all it`s arguments in order
-		streamqueue(...streams, lastBoundary).pipe(response);
+		dataStream = streamqueue(...streams, lastBoundary);
 	} else {
+		// Only a single range was requested
 		const streamOpts = {};
 		if (ranges) {
 			streamOpts.start = ranges[0].start;
 			streamOpts.end = ranges[0].end;
 		}
 
-		let fileStream = null;
-
 		try {
-			fileStream = await handlers.createReadStream(absolutePath, streamOpts);
+			dataStream = await handlers.createReadStream(absolutePath, streamOpts);
 		} catch (err) {
 			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 		}
-
-		fileStream.pipe(response);
 	}
+
+	response.writeHead(response.statusCode || 200, headers);
+	dataStream.pipe(response);
 };
