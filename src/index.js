@@ -479,19 +479,25 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 		stats = await handlers.stat(errorPage);
 	} catch (err) {
 		if (err.code !== 'ENOENT') {
-			// eslint-disable-next-line no-use-before-define
-			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+			console.error(err);
 		}
 	}
 
 	if (stats) {
-		const headers = await getHeaders(config.headers, current, errorPage, stats);
-		const errorStream = await handlers.createReadStream(errorPage);
+		let errorStream = null;
 
-		response.writeHead(statusCode, headers);
-		errorStream.pipe(response);
+		try {
+			errorStream = await handlers.createReadStream(errorPage);
 
-		return;
+			const headers = await getHeaders(config.headers, current, errorPage, stats);
+
+			response.writeHead(statusCode, headers);
+			errorStream.pipe(response);
+
+			return;
+		} catch (err) {
+			console.error(err);
+		}
 	}
 
 	const headers = await getHeaders(config.headers, current, absolutePath, null);
@@ -741,7 +747,15 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			streamOpts.start = ranges[0].start;
 			streamOpts.end = ranges[0].end;
 		}
-		const fileStream = await handlers.createReadStream(absolutePath, streamOpts);
+
+		let fileStream = null;
+
+		try {
+			fileStream = await handlers.createReadStream(absolutePath, streamOpts);
+		} catch (err) {
+			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+		}
+
 		fileStream.pipe(response);
 	}
 };
