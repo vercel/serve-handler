@@ -727,17 +727,25 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	response.writeHead(response.statusCode || 200, headers);
 	if (ranges && ranges.length > 1) {
-		const streams = await Promise.all(
-			ranges.reduce((acc, {start, end}, i) => {
-				acc.push(createStreamFromString(
-					`${i === 0 ? '' : '\r\n'}--${BOUNDARY}\r\n${
-						oldContentType ? `Content-Type: ${oldContentType}\r\n` : ''
-					}Content-Range: bytes ${start}-${end}/${stats.size}` + `\r\n\r\n`
-				));
-				acc.push(handlers.createReadStream(absolutePath, {start, end}));
-				return acc;
-			}, [])
-		);
+		let streams = null;
+		try {
+			streams = await Promise.all(
+				ranges.reduce((acc, {start, end}, i) => {
+					let header = `${i === 0 ? '' : '\r\n'}--${BOUNDARY}\r\n`;
+					if (oldContentType) {
+						header += `Content-Type: ${oldContentType}\r\n`;
+					}
+					header += `Content-Range: bytes ${start}-${end}/${stats.size}` + `\r\n\r\n`;
+					acc.push(createStreamFromString(header));
+					acc.push(handlers.createReadStream(absolutePath, {start, end}));
+					return acc;
+				}, [])
+			);
+		} catch (err) {
+			// catches `handlers.createReadStream` errors
+			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+		}
+
 		const lastBoundary = createStreamFromString(`\r\n--${BOUNDARY}--`);
 		// `streamqueue` returns a Readable stream that outputs all it`s arguments in order
 		streamqueue(...streams, lastBoundary).pipe(response);
