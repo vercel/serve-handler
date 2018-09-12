@@ -1,20 +1,20 @@
-/*! The MIT License (MIT) Copyright (c) 2014 Scott Corgan */
+/* ! The MIT License (MIT) Copyright (c) 2014 Scott Corgan */
 
 // This is adopted from https://github.com/scottcorgan/glob-slash/
 
-var path = require('path');
-var exports = module.exports = slashGlob;
+const path = require('path');
 
-exports.normalize = normalize;
+function normalize(value) {
+	return path.posix.normalize(path.posix.join('/', value));
+}
 
-function slashGlob (value) {
-  if (value.charAt(0) === '!') {
-    return '!' + exports.normalize(value.substr(1));
-  }
+function slashGlob(value) {
+	if (value.charAt(0) === '!') {
+		return `!${normalize(value.substr(1))}`;
+	}
 
-  return exports.normalize(value);
-};
+	return normalize(value);
+}
 
-function normalize (value) {
-  return path.posix.normalize(path.posix.join('/', value));
-};
+module.exports = slashGlob;
+module.exports.normalize = normalize;
