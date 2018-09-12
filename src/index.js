@@ -5,7 +5,7 @@ const {stat, createReadStream, readdir} = require('fs');
 
 // Packages
 const url = require('fast-url-parser');
-const slasher = require('glob-slash');
+const slasher = require('./glob-slash');
 const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');
 const mime = require('mime-types');
