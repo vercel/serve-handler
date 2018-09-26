@@ -368,6 +368,33 @@ test('set `redirects` config property to wildcard path', async t => {
 	t.is(location, `${url}/${destination}`);
 });
 
+test('set `redirects` config property to a negated wildcard path', async t => {
+	const destination = 'testing';
+
+	const url = await getUrl({
+		redirects: [{
+			source: '!face/**',
+			destination
+		}]
+	 });
+
+	const responseTruthy = await fetch(`${url}/test/mask`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const locationTruthy = responseTruthy.headers.get('location');
+	t.is(locationTruthy, `${url}/${destination}`);
+
+	const responseFalsy = await fetch(`${url}/face/mask`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const locationFalsy = responseFalsy.headers.get('location');
+	t.falsy(locationFalsy);
+});
+
 test('set `redirects` config property to wildcard path and do not match', async t => {
 	const destination = 'testing';
 
@@ -1257,4 +1284,3 @@ test('log error when checking `404.html` failed', async t => {
 
 	t.is(text, content);
 });
-

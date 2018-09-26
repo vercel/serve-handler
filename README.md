@@ -2,6 +2,7 @@
 
 [![Build Status](https://circleci.com/gh/zeit/serve-handler.svg?&style=shield)](https://circleci.com/gh/zeit/serve-handler)
 [![codecov](https://codecov.io/gh/zeit/serve-handler/branch/master/graph/badge.svg)](https://codecov.io/gh/zeit/serve-handler)
+[![install size](https://packagephobia.now.sh/badge?p=serve-handler)](https://packagephobia.now.sh/result?p=serve-handler)
 [![Join the community on Spectrum](https://withspectrum.github.io/badge/badge.svg)](https://spectrum.chat/zeit)
 
 This package represents the core of [serve](https://github.com/zeit/serve) and static deployments running on [Now](https://zeit.co/now). It can be plugged into any HTTP server and is responsible for routing requests and handling responses.
