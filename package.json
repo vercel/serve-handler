@@ -22,6 +22,7 @@
   "license": "MIT",
   "files": [
     "src/index.js",
+    "src/glob-slash.js",
     "src/directory.js",
     "src/error.js"
   ],
