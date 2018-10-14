@@ -13,13 +13,13 @@ In order to customize the default behaviour, you can also pass custom routing ru
 
 Get started by installing the package using [yarn](https://yarnpkg.com/lang/en/):
 
-```js
+```sh
 yarn add serve-handler
 ```
 
 You can also use [npm](https://www.npmjs.com/) instead, if you'd like:
 
-```js
+```sh
 npm install serve-handler
 ```
 
