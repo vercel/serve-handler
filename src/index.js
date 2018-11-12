@@ -556,7 +556,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (redirect) {
 		response.writeHead(redirect.statusCode, {
-			Location: redirect.target
+			Location: encodeURIComponent(redirect.target)
 		});
 
 		response.end();
