@@ -14,6 +14,7 @@ const bytes = require('bytes');
 const contentDisposition = require('content-disposition');
 const isPathInside = require('path-is-inside');
 const parseRange = require('range-parser');
+const httpProxy = require('http-proxy');
 
 // Other
 const directoryTemplate = require('./directory');
@@ -180,6 +181,29 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 			return {
 				target,
 				statusCode: type || defaultType
+			};
+		}
+	}
+
+	return null;
+};
+
+const shouldProxy = (decodedPath, {proxy = []}, onError) => {
+	for (let index = 0; index < proxy.length; index++) {
+		const {source, destination, ...options} = proxy[index];
+		const matches = sourceMatches(source, decodedPath, true);
+
+		if (matches) {
+			const server = httpProxy.createProxyServer({
+				changeOrigin: true,
+				target: destination,
+				...options
+			});
+
+			server.on('error', onError);
+
+			return {
+				server
 			};
 		}
 	}
@@ -590,6 +614,19 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		});
 
 		response.end();
+		return;
+	}
+
+	const proxy = shouldProxy(relativePath, config, err =>
+		internalError(absolutePath, response, acceptsJSON, current, handlers, config, err));
+
+	if (proxy) {
+		try {
+			proxy.server.web(request, response);
+		} catch (err) {
+			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+		}
+
 		return;
 	}
 
