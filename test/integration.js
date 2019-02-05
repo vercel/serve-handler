@@ -1284,3 +1284,16 @@ test('log error when checking `404.html` failed', async t => {
 
 	t.is(text, content);
 });
+
+test('prevent access to parent directory', async t => {
+	const url = await getUrl({
+		rewrites: [
+			{source: '/secret', destination: '/404.html'}
+		]
+	});
+
+	const response = await fetch(`${url}/dir/../secret`);
+	const text = await response.text();
+
+	t.is(text.trim(), '<span>Not Found</span>');
+});
