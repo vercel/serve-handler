@@ -21,6 +21,7 @@ const errorTemplate = require('./error');
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
 	const slashed = slasher(source);
+	const resolvedPath = path.resolve(requestPath);
 
 	let results = null;
 
@@ -28,7 +29,7 @@ const sourceMatches = (source, requestPath, allowSegments) => {
 		const normalized = slashed.replace('*', '(.*)');
 		const expression = pathToRegExp(normalized, keys);
 
-		results = expression.exec(requestPath);
+		results = expression.exec(resolvedPath);
 
 		if (!results) {
 			// clear keys so that they are not used
@@ -38,7 +39,7 @@ const sourceMatches = (source, requestPath, allowSegments) => {
 		}
 	}
 
-	if (results || minimatch(requestPath, slashed)) {
+	if (results || minimatch(resolvedPath, slashed)) {
 		return {
 			keys,
 			results
