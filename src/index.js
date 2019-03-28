@@ -608,7 +608,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		try {
 			stats = await handlers.stat(absolutePath);
 		} catch (err) {
-			if (err.code !== 'ENOENT') {
+			if (err.code !== 'ENOENT' && err.code != 'ENOTDIR') {
 				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 			}
 		}
