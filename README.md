@@ -58,6 +58,7 @@ You can use any of the following options:
 | [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                  |
 | [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths               |
 | [`renderSingle`](#rendersingle-boolean)              | If a directory only contains one file, render it          |
+| [`symlinks`](#symlinks-boolean)                      | Resolve symlinks instead of rendering a 404 error         |
 
 ### public (String)
 
@@ -259,6 +260,20 @@ This is disabled by default and can be enabled like this:
 
 After that, if you access your directory `/test` (for example), you will see an image being rendered if the directory contains a single image file.
 
+### symlinks (Boolean)
+
+For security purposes, symlinks are disabled by default. If `serve-handler` encounters a symlink, it will treat it as if it doesn't exist in the first place. In turn, a 404 error is rendered for that path.
+
+However, this behavior can easily be adjusted:
+
+```js
+{
+  "symlinks": true
+}
+```
+
+Once this property is set as shown above, all symlinks will automatically be resolved to their targets.
+
 ## Error templates
 
 The handler will automatically determine the right error format if one occurs and then sends it to the client in that format.
@@ -275,7 +290,8 @@ These are the methods used by the package (they can all return a `Promise` or be
 
 ```js
 await handler(request, response, undefined, {
-  stat(path) {},
+  lstat(path) {},
+  realpath(path) {},
   createReadStream(path, config) {}
   readdir(path) {},
   sendError(absolutePath, response, acceptsJSON, root, handlers, config, error) {}
