@@ -667,6 +667,9 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		});
 	}
 
+	// If we figured out that the target is a symlink, we need to
+	// resolve the symlink and run a new `stat` call just for the
+	// target of that symlink.
 	if (isSymLink) {
 		absolutePath = await handlers.realpath(absolutePath);
 		stats = await handlers.lstat(absolutePath);
