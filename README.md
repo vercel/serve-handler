@@ -136,6 +136,16 @@ You can also use so-called "routing segments" as follows:
 
 Now, if a visitor accesses `/projects/123/edit`, it will respond with the file `/edit-project-123.html`.
 
+Sometimes, the part of the URL that you will match might contain characters that you do not want to get encoded. In that case, you should add the `raw` option. You will also need to provide a RegExp for the routing segment. By default, characters like `/` are not allowed.
+
+```json
+{
+  "rewrites": [
+    { "source": "/projects/:file+", "destination": "/actual-projects/:file(.+)", "raw": true },
+  ]
+}
+```
+
 **NOTE:** The paths can contain globs (matched using [minimatch](https://github.com/isaacs/minimatch)) or regular expressions (match using [path-to-regexp](https://github.com/pillarjs/path-to-regexp)).
 
 ### redirects (Array)
