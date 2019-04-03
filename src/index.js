@@ -1,7 +1,7 @@
 // Native
 const {promisify} = require('util');
 const path = require('path');
-const {stat, createReadStream, readdir} = require('fs');
+const {realpath, lstat, createReadStream, readdir} = require('fs');
 
 // Packages
 const url = require('fast-url-parser');
@@ -327,10 +327,10 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		// simulating those calls and needs to special-case this.
 		let stats = null;
 
-		if (methods.stat) {
-			stats = await handlers.stat(filePath, true);
+		if (methods.lstat) {
+			stats = await handlers.lstat(filePath, true);
 		} else {
-			stats = await handlers.stat(filePath);
+			stats = await handlers.lstat(filePath);
 		}
 
 		details.relative = path.join(relativePath, details.base);
@@ -466,7 +466,7 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 	const errorPage = path.join(current, `${statusCode}.html`);
 
 	try {
-		stats = await handlers.stat(errorPage);
+		stats = await handlers.lstat(errorPage);
 	} catch (err) {
 		if (err.code !== 'ENOENT') {
 			console.error(err);
@@ -512,7 +512,8 @@ const internalError = async (...args) => {
 };
 
 const getHandlers = methods => Object.assign({
-	stat: promisify(stat),
+	lstat: promisify(lstat),
+	realpath: promisify(realpath),
 	createReadStream,
 	readdir: promisify(readdir),
 	sendError
@@ -580,7 +581,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (path.extname(relativePath) !== '') {
 		try {
-			stats = await handlers.stat(absolutePath);
+			stats = await handlers.lstat(absolutePath);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
 				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
@@ -592,7 +593,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (!stats && (cleanUrl || rewrittenPath)) {
 		try {
-			const related = await findRelated(current, relativePath, rewrittenPath, handlers.stat);
+			const related = await findRelated(current, relativePath, rewrittenPath, handlers.lstat);
 
 			if (related) {
 				({stats, absolutePath} = related);
@@ -606,7 +607,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (!stats) {
 		try {
-			stats = await handlers.stat(absolutePath);
+			stats = await handlers.lstat(absolutePath);
 		} catch (err) {
 			if (err.code !== 'ENOENT') {
 				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
@@ -652,13 +653,26 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		}
 	}
 
-	if (!stats) {
+	const isSymLink = stats && stats.isSymbolicLink();
+
+	// There are two scenarios in which we want to reply with
+	// a 404 error: Either the path does not exist, or it is a
+	// symlink while the `symlinks` option is disabled (which it is by default).
+	if (!stats || (!config.symlinks && isSymLink)) {
 		// allow for custom 404 handling
 		return handlers.sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
 			statusCode: 404,
 			code: 'not_found',
 			message: 'The requested path could not be found'
 		});
+	}
+
+	// If we figured out that the target is a symlink, we need to
+	// resolve the symlink and run a new `stat` call just for the
+	// target of that symlink.
+	if (isSymLink) {
+		absolutePath = await handlers.realpath(absolutePath);
+		stats = await handlers.lstat(absolutePath);
 	}
 
 	const streamOpts = {};
@@ -669,6 +683,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 		if (typeof range === 'object' && range.type === 'bytes') {
 			const {start, end} = range[0];
+
 			streamOpts.start = start;
 			streamOpts.end = end;
 

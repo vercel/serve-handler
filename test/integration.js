@@ -129,14 +129,14 @@ test('render json sub directory listing with custom stat handler', async t => {
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: (location, isDirectoryListing) => {
+		lstat: (location, isDirectoryListing) => {
 			if (contents.includes(path.basename(location))) {
 				t.true(isDirectoryListing);
 			} else {
 				t.falsy(isDirectoryListing);
 			}
 
-			return fs.stat(location);
+			return fs.lstat(location);
 		}
 	});
 
@@ -207,13 +207,13 @@ test('try to render non-existing json file and `stat` errors', async t => {
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: location => {
+		lstat: location => {
 			if (path.basename(location) === name && !done) {
 				done = true;
 				throw new Error(message);
 			}
 
-			return fs.stat(location);
+			return fs.lstat(location);
 		}
 	});
 
@@ -514,7 +514,7 @@ test('pass custom handlers', async t => {
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: fs.stat,
+		lstat: fs.lstat,
 		createReadStream: fs.createReadStream
 	});
 
@@ -617,12 +617,12 @@ test('receive custom `404.html` error page', async t => {
 test('error is still sent back even if reading `404.html` failed', async t => {
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: location => {
+		lstat: location => {
 			if (path.basename(location) === '404.html') {
 				throw new Error('Any error occured while checking the file');
 			}
 
-			return fs.stat(location);
+			return fs.lstat(location);
 		}
 	});
 
@@ -771,12 +771,12 @@ test('set `cleanUrls` config property to `true` and an error occurs', async t =>
 	const url = await getUrl({
 		cleanUrls: true
 	}, {
-		stat: location => {
+		lstat: location => {
 			if (path.basename(location) === 'index.html') {
 				throw new Error(message);
 			}
 
-			return fs.stat(location);
+			return fs.lstat(location);
 		}
 	});
 
@@ -798,7 +798,7 @@ test('error occurs while getting stat of path', async t => {
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: location => {
+		lstat: location => {
 			if (path.basename(location) !== '500.html') {
 				throw new Error(message);
 			}
@@ -817,32 +817,32 @@ test('error occurs while getting stat of path', async t => {
 	t.is(text, content);
 });
 
-test('the first `stat` call should be for a related file', async t => {
+test('the first `lstat` call should be for a related file', async t => {
 	let done = null;
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: location => {
+		lstat: location => {
 			if (!done) {
 				t.is(path.basename(location), 'index.html');
 				done = true;
 			}
 
-			return fs.stat(location);
+			return fs.lstat(location);
 		}
 	});
 
 	await fetch(url);
 });
 
-test('the `stat` call should only be made for files and directories', async t => {
+test('the `lstat` call should only be made for files and directories', async t => {
 	const locations = [];
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: location => {
+		lstat: location => {
 			locations.push(location);
-			return fs.stat(location);
+			return fs.lstat(location);
 		}
 	});
 
@@ -857,12 +857,12 @@ test('error occurs while getting stat of not-found path', async t => {
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
-		stat: location => {
+		lstat: location => {
 			if (path.basename(location) === base) {
 				throw new Error(message);
 			}
 
-			return fs.stat(location);
+			return fs.lstat(location);
 		}
 	});
 
@@ -1124,8 +1124,8 @@ test('range request without size', async t => {
 	};
 
 	const url = await getUrl(config, {
-		stat: async location => {
-			const stats = await fs.stat(location);
+		lstat: async location => {
+			const stats = await fs.lstat(location);
 
 			config.headers.unshift({
 				source: '*',
@@ -1296,4 +1296,36 @@ test('prevent access to parent directory', async t => {
 	const text = await response.text();
 
 	t.is(text.trim(), '<span>Not Found</span>');
+});
+
+test('symlinks should not work by default', async t => {
+	const name = 'symlinks/package.json';
+	const url = await getUrl();
+
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+
+	t.is(response.status, 404);
+	t.is(text.trim(), '<span>Not Found</span>');
+});
+
+test('allow symlinks by setting the option', async t => {
+	const name = 'symlinks/package.json';
+	const related = path.join(fixturesFull, name);
+	const content = await fs.readFile(related);
+
+	const url = await getUrl({
+		symlinks: true
+	});
+
+	const response = await fetch(`${url}/${name}`);
+	const length = Number(response.headers.get('content-length'));
+
+	t.is(length, content.length);
+	t.is(response.status, 200);
+
+	const text = await response.text();
+	const spec = content.toString();
+
+	t.is(text, spec);
 });
