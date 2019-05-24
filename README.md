@@ -5,7 +5,7 @@
 [![install size](https://packagephobia.now.sh/badge?p=serve-handler)](https://packagephobia.now.sh/result?p=serve-handler)
 [![Join the community on Spectrum](https://withspectrum.github.io/badge/badge.svg)](https://spectrum.chat/zeit)
 
-This package represents the core of [serve](https://github.com/zeit/serve) and static deployments running on [Now](https://zeit.co/now). It can be plugged into any HTTP server and is responsible for routing requests and handling responses.
+This package represents the core of [serve](https://github.com/zeit/serve). It can be plugged into any HTTP server and is responsible for routing requests and handling responses.
 
 In order to customize the default behaviour, you can also pass custom routing rules, provide your own methods for interacting with the file system and much more.
 
