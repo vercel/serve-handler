@@ -583,7 +583,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		try {
 			stats = await handlers.lstat(absolutePath);
 		} catch (err) {
-			if (err.code !== 'ENOENT') {
+			if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') {
 				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 			}
 		}
@@ -599,7 +599,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 				({stats, absolutePath} = related);
 			}
 		} catch (err) {
-			if (err.code !== 'ENOENT') {
+			if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') {
 				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 			}
 		}
@@ -609,7 +609,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		try {
 			stats = await handlers.lstat(absolutePath);
 		} catch (err) {
-			if (err.code !== 'ENOENT') {
+			if (err.code !== 'ENOENT' && err.code !== 'ENOTDIR') {
 				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 			}
 		}
