@@ -21,7 +21,7 @@ const errorTemplate = require('./error');
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
 	const slashed = slasher(source);
-	const resolvedPath = path.resolve(requestPath);
+	const resolvedPath = path.posix.resolve(requestPath);
 
 	let results = null;
 
