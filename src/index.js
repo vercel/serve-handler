@@ -338,7 +338,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		if (stats.isDirectory()) {
 			details.base += slashSuffix;
 			details.relative += slashSuffix;
-			details.type = 'directory';
+			details.type = 'folder';
 		} else {
 			if (canRenderSingle) {
 				return {
