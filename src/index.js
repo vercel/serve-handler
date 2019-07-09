@@ -4,6 +4,7 @@ const path = require('path');
 const {realpath, lstat, createReadStream, readdir} = require('fs');
 
 // Packages
+const etag = require('etag');
 const url = require('fast-url-parser');
 const slasher = require('./glob-slash');
 const minimatch = require('minimatch');
@@ -199,6 +200,7 @@ const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 
 	if (stats) {
 		defaultHeaders = {
+			'ETag': etag(stats),
 			'Last-Modified': stats.mtime.toUTCString(),
 			'Content-Length': stats.size,
 			// Default to "inline", which always tries to render in the browser,

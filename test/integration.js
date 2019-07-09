@@ -1329,3 +1329,12 @@ test('allow symlinks by setting the option', async t => {
 
 	t.is(text, spec);
 });
+
+test('etag header is set', async t => {
+	const directory = 'single-directory';
+	const url = await getUrl({
+		renderSingle: true
+	});
+	const response = await fetch(`${url}/${directory}`);
+	t.truthy(/^W\/"(.+)"$/.test(response.headers.get('etag')));
+});
