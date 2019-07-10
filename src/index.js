@@ -228,7 +228,7 @@ const getHeaders = async (handlers, config, current, absolutePath, stats) => {
 
 		if (etag) {
 			let [mtime, sha] = etags.get(absolutePath) || [];
-			if (mtime !== stats.mtime) {
+			if (Number(mtime) !== Number(stats.mtime)) {
 				sha = await calculateSha(handlers, absolutePath);
 				etags.set(absolutePath, [stats.mtime, sha]);
 			}
