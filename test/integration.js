@@ -1339,6 +1339,6 @@ test('etag header is set', async t => {
 	const response = await fetch(`${url}/${directory}`);
 	t.is(
 		response.headers.get('etag'),
-		'W/"4e5f19df3bfe8db7d588edfc3960991aa0715ccf"'
+		'"4e5f19df3bfe8db7d588edfc3960991aa0715ccf"'
 	);
 });

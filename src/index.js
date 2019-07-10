@@ -215,6 +215,7 @@ const getHeaders = async (handlers, config, current, absolutePath, stats) => {
 
 	if (stats) {
 		defaultHeaders = {
+			'Last-Modified': stats.mtime.toUTCString(),
 			'Content-Length': stats.size,
 			// Default to "inline", which always tries to render in the browser,
 			// if that's not working, it will save the file. But to be clear: This
@@ -231,9 +232,7 @@ const getHeaders = async (handlers, config, current, absolutePath, stats) => {
 				sha = await calculateSha(handlers, absolutePath);
 				etags.set(absolutePath, [stats.mtime, sha]);
 			}
-			defaultHeaders['ETag'] = `W/"${sha}"`;
-		} else {
-			defaultHeaders['Last-Modified'] = stats.mtime.toUTCString();
+			defaultHeaders['ETag'] = `"${sha}"`;
 		}
 
 		const contentType = mime.contentType(base);
