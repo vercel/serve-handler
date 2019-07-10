@@ -1330,15 +1330,33 @@ test('allow symlinks by setting the option', async t => {
 	t.is(text, spec);
 });
 
-test('etag header is set', async t => {
-	const directory = 'single-directory';
+test('auth is set improperly', async t => {
 	const url = await getUrl({
-		renderSingle: true,
-		etag: true
+		auth: ['testuser']
 	});
-	const response = await fetch(`${url}/${directory}`);
-	t.is(
-		response.headers.get('etag'),
-		'"4e5f19df3bfe8db7d588edfc3960991aa0715ccf"'
-	);
+	const response = await fetch(`${url}/`);
+	t.is(response.status, 500);
+});
+
+test('auth is set properly, no credentials', async t => {
+	const url = await getUrl({
+		auth: ['testuser', 'testpassword']
+	});
+	const response = await fetch(`${url}/`);
+	t.is(response.status, 401);
+});
+
+test('auth is set properly, with credentials', async t => {
+	const username = 'testuser';
+	const password = 'testpassword';
+	const url = await getUrl({
+		auth: [username, password]
+	});
+	const passwordBuffer = new Buffer(`${username}:${password}`);
+	const response = await fetch(`${url}/`, {
+		headers: {
+			Authorization: `Basic ${passwordBuffer.toString('base64')}`
+		}
+	});
+	t.is(response.status, 200);
 });
