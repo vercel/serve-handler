@@ -591,20 +591,20 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		response.end();
 		return;
 	}
-	
+
 	// Basic Authentication, if specified in the config
 	if (config.auth) {
 		if (!config.auth.length || config.auth.length !== 2) {
-			const err = new Error('You are running basic auth but did not properly configure "auth" in your static config.')
+			const err = new Error('You are running basic auth but did not properly configure "auth" in your static config.');
 			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 		}
-		const credentials = auth(request)
+		const credentials = auth(request);
 		if (!credentials || credentials.name !== config.auth[0] || credentials.pass !== config.auth[1]) {
-			response.setHeader('WWW-Authenticate', 'Basic realm="User Visible Realm"')
+			response.setHeader('WWW-Authenticate', 'Basic realm="User Visible Realm"');
 			return handlers.sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
 				statusCode: 401,
 				code: 'access_denied',
-				message: 'Access Denied',
+				message: 'Access Denied'
 			});
 		}
 	}
