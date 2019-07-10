@@ -47,19 +47,19 @@ await handler(request, response, {
 
 You can use any of the following options:
 
-| Property                                             | Description                                               |
-|------------------------------------------------------|-----------------------------------------------------------|
-| [`public`](#public-string)                           | Set a sub directory to be served                          |
-| [`cleanUrls`](#cleanurls-booleanarray)               | Have the `.html` extension stripped from paths            |
-| [`rewrites`](#rewrites-array)                        | Rewrite paths to different paths                          |
-| [`redirects`](#redirects-array)                      | Forward paths to different paths or external URLs         |
-| [`headers`](#headers-array)                          | Set custom headers for specific paths                     |
-| [`directoryListing`](#directorylisting-booleanarray) | Disable directory listing or restrict it to certain paths |
-| [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                  |
-| [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths               |
-| [`renderSingle`](#rendersingle-boolean)              | If a directory only contains one file, render it          |
-| [`symlinks`](#symlinks-boolean)                      | Resolve symlinks instead of rendering a 404 error         |
-| [`etag`](#etag-boolean)                              | Calculate a strong `ETag` response header                 |
+| Property                                             | Description                                                     |
+|------------------------------------------------------|-----------------------------------------------------------------|
+| [`public`](#public-string)                           | Set a sub directory to be served                                |
+| [`cleanUrls`](#cleanurls-booleanarray)               | Have the `.html` extension stripped from paths                  |
+| [`rewrites`](#rewrites-array)                        | Rewrite paths to different paths                                |
+| [`redirects`](#redirects-array)                      | Forward paths to different paths or external URLs               |
+| [`headers`](#headers-array)                          | Set custom headers for specific paths                           |
+| [`directoryListing`](#directorylisting-booleanarray) | Disable directory listing or restrict it to certain paths       |
+| [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                        |
+| [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths                     |
+| [`renderSingle`](#rendersingle-boolean)              | If a directory only contains one file, render it                |
+| [`symlinks`](#symlinks-boolean)                      | Resolve symlinks instead of rendering a 404 error               |
+| [`etag`](#etag-boolean)                              | Calculate an `ETag` response header, instead of `Last-Modified` |
 
 ### public (String)
 
@@ -277,7 +277,7 @@ Once this property is set as shown above, all symlinks will automatically be res
 
 ### etag (Boolean)
 
-HTTP response headers will contain an [`ETag`][etag] response header, in addition to the [`Last-Modified`][last-modified] header. Opt-in because calculating the hash value may be computationally expensive for large files.
+HTTP response headers will contain an [`ETag`][etag] response header instead of a [`Last-Modified`][last-modified] header. Opt-in because calculating the hash value may be computationally expensive for large files.
 
 Sending an `ETag` header is disabled by default and can be enabled like this:
 
