@@ -33,7 +33,6 @@ const calculateSha = (handlers, absolutePath) =>
 		});
 	});
 
-
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
 	const slashed = slasher(source);
