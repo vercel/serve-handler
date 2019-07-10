@@ -1330,6 +1330,19 @@ test('allow symlinks by setting the option', async t => {
 	t.is(text, spec);
 });
 
+test('etag header is set', async t => {
+	const directory = 'single-directory';
+	const url = await getUrl({
+		renderSingle: true,
+		etag: true
+	});
+	const response = await fetch(`${url}/${directory}`);
+	t.is(
+		response.headers.get('etag'),
+		'"4e5f19df3bfe8db7d588edfc3960991aa0715ccf"'
+	);
+});
+
 test('auth is set improperly (improper number parameters)', async t => {
 	const url = await getUrl({
 		auth: ['testuser']
