@@ -24,7 +24,7 @@ const etags = new Map();
 const calculateSha = (handlers, absolutePath) =>
 	new Promise((resolve, reject) => {
 		const hash = createHash('sha1');
-		hash.update(absolutePath);
+		hash.update(path.extname(absolutePath));
 		hash.update('-');
 		const rs = handlers.createReadStream(absolutePath);
 		rs.on('error', reject);

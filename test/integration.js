@@ -1340,13 +1340,13 @@ test('etag header is set', async t => {
 	t.is(response.status, 200);
 	t.is(
 		response.headers.get('etag'),
-		'"f636be8ebeec6d60536a00a9d197843becfdd0c6"'
+		'"60be4422531fce1513df34cbcc90bed5915a53ef"'
 	);
 
 	response = await fetch(`${url}/docs.txt`);
 	t.is(response.status, 200);
 	t.is(
 		response.headers.get('etag'),
-		'"6658be9c345e8b79034c781e555c15a38302bc2c"'
+		'"ba114dbc69e41e180362234807f093c3c4628f90"'
 	);
 });
