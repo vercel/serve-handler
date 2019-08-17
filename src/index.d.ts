@@ -107,6 +107,16 @@ declare module 'serve-handler' {
 		 * For security purposes, symlinks are disabled by default. If serve-handler encounters a symlink, it will treat it as if it doesn't exist in the first place. In turn, a 404 error is rendered for that path. However, this behavior can easily be adjusted by setting this option to `true`. Once this property is set, all symlinks will automatically be resolved to their targets.
 		 */
 		symlinks?: boolean;
+
+		/**
+		 * #### Calculate a strong `ETag` response header, instead of `Last-Modified`.
+		 *
+		 * HTTP response headers will contain a strong `ETag` response header, instead of a `Last-Modified` header. Opt-in because calculating the hash value may be computationally expensive for large files.
+		 *
+		 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+		 * @see https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
+		 */
+		etag?: boolean;
 	}
 
 	interface Rewrite {
