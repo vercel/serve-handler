@@ -1,6 +1,7 @@
 // Native
 const {promisify} = require('util');
 const path = require('path');
+const {createHash} = require('crypto');
 const {realpath, lstat, createReadStream, readdir} = require('fs');
 
 // Packages
@@ -17,6 +18,22 @@ const parseRange = require('range-parser');
 // Other
 const directoryTemplate = require('./directory');
 const errorTemplate = require('./error');
+
+const etags = new Map();
+
+const calculateSha = (handlers, absolutePath) =>
+	new Promise((resolve, reject) => {
+		const hash = createHash('sha1');
+		hash.update(path.extname(absolutePath));
+		hash.update('-');
+		const rs = handlers.createReadStream(absolutePath);
+		rs.on('error', reject);
+		rs.on('data', buf => hash.update(buf));
+		rs.on('end', () => {
+			const sha = hash.digest('hex');
+			resolve(sha);
+		});
+	});
 
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
@@ -177,7 +194,8 @@ const appendHeaders = (target, source) => {
 	}
 };
 
-const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
+const getHeaders = async (handlers, config, current, absolutePath, stats) => {
+	const {headers: customHeaders = [], etag = false} = config;
 	const related = {};
 	const {base} = path.parse(absolutePath);
 	const relativePath = path.relative(current, absolutePath);
@@ -199,7 +217,6 @@ const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 
 	if (stats) {
 		defaultHeaders = {
-			'Last-Modified': stats.mtime.toUTCString(),
 			'Content-Length': stats.size,
 			// Default to "inline", which always tries to render in the browser,
 			// if that's not working, it will save the file. But to be clear: This
@@ -209,6 +226,17 @@ const getHeaders = async (customHeaders = [], current, absolutePath, stats) => {
 			}),
 			'Accept-Ranges': 'bytes'
 		};
+
+		if (etag) {
+			let [mtime, sha] = etags.get(absolutePath) || [];
+			if (Number(mtime) !== Number(stats.mtime)) {
+				sha = await calculateSha(handlers, absolutePath);
+				etags.set(absolutePath, [stats.mtime, sha]);
+			}
+			defaultHeaders['ETag'] = `"${sha}"`;
+		} else {
+			defaultHeaders['Last-Modified'] = stats.mtime.toUTCString();
+		}
 
 		const contentType = mime.contentType(base);
 
@@ -338,7 +366,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		if (stats.isDirectory()) {
 			details.base += slashSuffix;
 			details.relative += slashSuffix;
-			details.type = 'directory';
+			details.type = 'folder';
 		} else {
 			if (canRenderSingle) {
 				return {
@@ -479,7 +507,7 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 		try {
 			stream = await handlers.createReadStream(errorPage);
 
-			const headers = await getHeaders(config.headers, current, errorPage, stats);
+			const headers = await getHeaders(handlers, config, current, errorPage, stats);
 
 			response.writeHead(statusCode, headers);
 			stream.pipe(response);
@@ -490,7 +518,7 @@ const sendError = async (absolutePath, response, acceptsJSON, current, handlers,
 		}
 	}
 
-	const headers = await getHeaders(config.headers, current, absolutePath, null);
+	const headers = await getHeaders(handlers, config, current, absolutePath, null);
 	headers['Content-Type'] = 'text/html; charset=utf-8';
 
 	response.writeHead(statusCode, headers);
@@ -704,7 +732,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
 	}
 
-	const headers = await getHeaders(config.headers, current, absolutePath, stats);
+	const headers = await getHeaders(handlers, config, current, absolutePath, stats);
 
 	// eslint-disable-next-line no-undefined
 	if (streamOpts.start !== undefined && streamOpts.end !== undefined) {

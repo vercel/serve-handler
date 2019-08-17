@@ -1079,7 +1079,7 @@ test('automatically handle ETag headers for normal files', async t => {
 	const name = 'object.json';
 	const related = path.join(fixturesFull, name);
 	const content = await fs.readJSON(related);
-	const value = 'd2ijdjoi29f3h3232';
+	const value = '"d2ijdjoi29f3h3232"';
 
 	const url = await getUrl({
 		headers: [{
@@ -1328,4 +1328,25 @@ test('allow symlinks by setting the option', async t => {
 	const spec = content.toString();
 
 	t.is(text, spec);
+});
+
+test('etag header is set', async t => {
+	const url = await getUrl({
+		renderSingle: true,
+		etag: true
+	});
+
+	let response = await fetch(`${url}/docs.md`);
+	t.is(response.status, 200);
+	t.is(
+		response.headers.get('etag'),
+		'"60be4422531fce1513df34cbcc90bed5915a53ef"'
+	);
+
+	response = await fetch(`${url}/docs.txt`);
+	t.is(response.status, 200);
+	t.is(
+		response.headers.get('etag'),
+		'"ba114dbc69e41e180362234807f093c3c4628f90"'
+	);
 });

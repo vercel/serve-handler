@@ -47,18 +47,19 @@ await handler(request, response, {
 
 You can use any of the following options:
 
-| Property                                             | Description                                               |
-|------------------------------------------------------|-----------------------------------------------------------|
-| [`public`](#public-string)                           | Set a sub directory to be served                          |
-| [`cleanUrls`](#cleanurls-booleanarray)               | Have the `.html` extension stripped from paths            |
-| [`rewrites`](#rewrites-array)                        | Rewrite paths to different paths                          |
-| [`redirects`](#redirects-array)                      | Forward paths to different paths or external URLs         |
-| [`headers`](#headers-array)                          | Set custom headers for specific paths                     |
-| [`directoryListing`](#directorylisting-booleanarray) | Disable directory listing or restrict it to certain paths |
-| [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                  |
-| [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths               |
-| [`renderSingle`](#rendersingle-boolean)              | If a directory only contains one file, render it          |
-| [`symlinks`](#symlinks-boolean)                      | Resolve symlinks instead of rendering a 404 error         |
+| Property                                             | Description                                                           |
+|------------------------------------------------------|-----------------------------------------------------------------------|
+| [`public`](#public-string)                           | Set a sub directory to be served                                      |
+| [`cleanUrls`](#cleanurls-booleanarray)               | Have the `.html` extension stripped from paths                        |
+| [`rewrites`](#rewrites-array)                        | Rewrite paths to different paths                                      |
+| [`redirects`](#redirects-array)                      | Forward paths to different paths or external URLs                     |
+| [`headers`](#headers-array)                          | Set custom headers for specific paths                                 |
+| [`directoryListing`](#directorylisting-booleanarray) | Disable directory listing or restrict it to certain paths             |
+| [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                              |
+| [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths                           |
+| [`renderSingle`](#rendersingle-boolean)              | If a directory only contains one file, render it                      |
+| [`symlinks`](#symlinks-boolean)                      | Resolve symlinks instead of rendering a 404 error                     |
+| [`etag`](#etag-boolean)                              | Calculate a strong `ETag` response header, instead of `Last-Modified` |
 
 ### public (String)
 
@@ -274,6 +275,18 @@ However, this behavior can easily be adjusted:
 
 Once this property is set as shown above, all symlinks will automatically be resolved to their targets.
 
+### etag (Boolean)
+
+HTTP response headers will contain a strong [`ETag`][etag] response header, instead of a [`Last-Modified`][last-modified] header. Opt-in because calculating the hash value may be computationally expensive for large files.
+
+Sending an `ETag` header is disabled by default and can be enabled like this:
+
+```js
+{
+  "etag": true
+}
+```
+
 ## Error templates
 
 The handler will automatically determine the right error format if one occurs and then sends it to the client in that format.
@@ -317,3 +330,7 @@ Since it comes with support for `serve-handler` out of the box, you can create a
 ## Author
 
 Leo Lamprecht ([@notquiteleo](https://twitter.com/notquiteleo)) - [ZEIT](https://zeit.co)
+
+
+[etag]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
+[last-modified]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Last-Modified
