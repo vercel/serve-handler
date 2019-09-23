@@ -3,6 +3,7 @@ const {promisify} = require('util');
 const path = require('path');
 const {createHash} = require('crypto');
 const {realpath, lstat, createReadStream, readdir} = require('fs');
+const {URL} = require('url');
 
 // Packages
 const url = require('fast-url-parser');
@@ -194,16 +195,19 @@ const shouldProxy = (decodedPath, {proxy = []}, onError) => {
 		const matches = sourceMatches(source, decodedPath, true);
 
 		if (matches) {
+			const u = new URL(destination);
+
 			const server = httpProxy.createProxyServer({
 				changeOrigin: true,
-				target: destination,
+				target: u.origin,
 				...options
 			});
 
 			server.on('error', onError);
 
 			return {
-				server
+				server,
+				target: toTarget(source, u.pathname, decodedPath)
 			};
 		}
 	}
@@ -622,6 +626,8 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (proxy) {
 		try {
+			const o = url.parse(request.url);
+			request.url = o.search ? `${proxy.target}${o.search}` : proxy.target;
 			proxy.server.web(request, response);
 		} catch (err) {
 			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
