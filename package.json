@@ -1,6 +1,6 @@
 {
   "name": "serve-handler",
-  "version": "6.1.0",
+  "version": "6.1.2",
   "description": "The routing foundation of `serve` and static deployments on Now",
   "main": "src/index.js",
   "scripts": {
@@ -29,15 +29,15 @@
   "devDependencies": {
     "@zeit/eslint-config-node": "0.2.13",
     "@zeit/git-hooks": "0.1.4",
-    "ava": "0.25.0",
+    "ava": "2.2.0",
     "codecov": "3.0.2",
     "commander": "2.15.1",
     "dot": "1.1.2",
-    "eslint": "4.19.1",
+    "eslint": "6.1.0",
     "fs-extra": "6.0.1",
     "micro": "9.3.2",
     "node-fetch": "2.1.2",
-    "nyc": "11.8.0",
+    "nyc": "14.1.1",
     "request": "2.87.0",
     "sleep-promise": "6.0.0",
     "test-listen": "1.1.0"

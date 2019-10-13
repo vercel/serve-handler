@@ -1331,15 +1331,23 @@ test('allow symlinks by setting the option', async t => {
 });
 
 test('etag header is set', async t => {
-	const directory = 'single-directory';
 	const url = await getUrl({
 		renderSingle: true,
 		etag: true
 	});
-	const response = await fetch(`${url}/${directory}`);
+
+	let response = await fetch(`${url}/docs.md`);
+	t.is(response.status, 200);
 	t.is(
 		response.headers.get('etag'),
-		'"4e5f19df3bfe8db7d588edfc3960991aa0715ccf"'
+		'"60be4422531fce1513df34cbcc90bed5915a53ef"'
+	);
+
+	response = await fetch(`${url}/docs.txt`);
+	t.is(response.status, 200);
+	t.is(
+		response.headers.get('etag'),
+		'"ba114dbc69e41e180362234807f093c3c4628f90"'
 	);
 });
 
