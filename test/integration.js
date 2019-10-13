@@ -1350,3 +1350,71 @@ test('etag header is set', async t => {
 		'"ba114dbc69e41e180362234807f093c3c4628f90"'
 	);
 });
+
+test('auth is set improperly (improper number parameters)', async t => {
+	const url = await getUrl({
+		auth: ['testuser']
+	});
+	const response = await fetch(`${url}/`);
+	t.is(response.status, 500);
+});
+test('auth is set improperly (no parameters)', async t => {
+	const url = await getUrl({
+		auth: []
+	});
+	const response = await fetch(`${url}/`);
+	t.is(response.status, 500);
+});
+
+test('auth is set properly, no credentials', async t => {
+	const url = await getUrl({
+		auth: ['testuser', 'testpassword']
+	});
+	const response = await fetch(`${url}/`);
+	t.is(response.status, 401);
+});
+
+test('auth is set properly, with correct credentials', async t => {
+	const username = 'testuser';
+	const password = 'testpassword';
+	const url = await getUrl({
+		auth: [username, password]
+	});
+	const passwordBuffer = new Buffer(`${username}:${password}`);
+	const response = await fetch(`${url}/`, {
+		headers: {
+			Authorization: `Basic ${passwordBuffer.toString('base64')}`
+		}
+	});
+	t.is(response.status, 200);
+});
+
+test('auth is set properly, with credentials, wrong name', async t => {
+	const username = 'testuser';
+	const password = 'testpassword';
+	const url = await getUrl({
+		auth: [username, password]
+	});
+	const passwordBuffer = new Buffer(`${username}_wrong:${password}`);
+	const response = await fetch(`${url}/`, {
+		headers: {
+			Authorization: `Basic ${passwordBuffer.toString('base64')}`
+		}
+	});
+	t.is(response.status, 401);
+});
+
+test('auth is set properly, with credentials, wrong password', async t => {
+	const username = 'testuser';
+	const password = 'testpassword';
+	const url = await getUrl({
+		auth: [username, password]
+	});
+	const passwordBuffer = new Buffer(`${username}:${password}_wrong`);
+	const response = await fetch(`${url}/`, {
+		headers: {
+			Authorization: `Basic ${passwordBuffer.toString('base64')}`
+		}
+	});
+	t.is(response.status, 401);
+});

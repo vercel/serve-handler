@@ -63,6 +63,7 @@
     "pre-commit": "lint-staged"
   },
   "dependencies": {
+    "basic-auth": "2.0.1",
     "bytes": "3.0.0",
     "content-disposition": "0.5.2",
     "fast-url-parser": "1.1.3",
