@@ -40,7 +40,11 @@ const calculateSha = (handlers, absolutePath) =>
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
 	const slashed = slasher(source);
-	const resolvedPath = path.posix.resolve(requestPath);
+	let resolvedPath = path.posix.resolve(requestPath);
+
+	if (requestPath.endsWith('/')) {
+		resolvedPath = `${resolvedPath}/`;
+	}
 
 	let results = null;
 
