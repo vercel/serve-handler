@@ -55,7 +55,7 @@ test('render html directory listing', async t => {
 
 	t.is(type, 'text/html; charset=utf-8');
 	t.true(contents.every(item => text.includes(item)));
-	t.falsy(contents.every(() => text.match(/\<small\>([12]\d{3})-/gm)));
+	t.falsy(contents.every(() => text.match(/\<small\>(Mon|Tue|...|Sun)\,\s\d{2}\s/g)));
 });
 
 test('render json directory listing', async t => {
@@ -921,7 +921,7 @@ test('set `renderModifiedDate` config property to `true`', async t => {
 	const type = response.headers.get('content-type');
 	t.is(type, 'text/html; charset=utf-8');
 	// Match to Year
-	t.true(contents.every(() => text.match(/\<small\>([12]\d{3})-/gm)));
+	t.true(contents.every(() => text.match(/\<small\>(Mon|Tue|...|Sun)\,\s\d{2}\s/g)));
 });
 
 test('set `renderModifiedDate` config property to `false`', async t => {
@@ -938,7 +938,7 @@ test('set `renderModifiedDate` config property to `false`', async t => {
 	const type = response.headers.get('content-type');
 	t.is(type, 'text/html; charset=utf-8');
 	// Match to Year
-	t.falsy(contents.every(() => text.match(/\<small\>([12]\d{3})-/gm)));
+	t.falsy(contents.every(() => text.match(/\<small\>(Mon|Tue|...|Sun)\,\s\d{2}\s/g)));
 });
 
 test('set `createReadStream` handler to async function', async t => {

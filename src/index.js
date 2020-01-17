@@ -386,7 +386,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			if (renderModifiedDate) {
 				const fileStats = await handlers.stat(path.join(absolutePath, file));
 
-				details.mtime = fileStats.mtime.toLocaleString();
+				details.mtime = fileStats.mtime.toUTCString();
 			}
 		}
 
