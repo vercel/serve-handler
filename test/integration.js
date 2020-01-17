@@ -55,6 +55,7 @@ test('render html directory listing', async t => {
 
 	t.is(type, 'text/html; charset=utf-8');
 	t.true(contents.every(item => text.includes(item)));
+	t.falsy(contents.every(() => text.match(/\<small\>([12]\d{3})-/gm)));
 });
 
 test('render json directory listing', async t => {
@@ -357,7 +358,7 @@ test('set `redirects` config property to wildcard path', async t => {
 			source: 'face/**',
 			destination
 		}]
-	 });
+	});
 
 	const response = await fetch(`${url}/face/mask`, {
 		redirect: 'manual',
@@ -376,7 +377,7 @@ test('set `redirects` config property to a negated wildcard path', async t => {
 			source: '!face/**',
 			destination
 		}]
-	 });
+	});
 
 	const responseTruthy = await fetch(`${url}/test/mask`, {
 		redirect: 'manual',
@@ -403,7 +404,7 @@ test('set `redirects` config property to wildcard path and do not match', async 
 			source: 'face/**',
 			destination
 		}]
-	 });
+	});
 
 	const response = await fetch(`${url}/test/mask`, {
 		redirect: 'manual',
@@ -422,7 +423,7 @@ test('set `redirects` config property to one-star wildcard path', async t => {
 			source: 'face/*/ideal',
 			destination
 		}]
-	 });
+	});
 
 	const response = await fetch(`${url}/face/mask/ideal`, {
 		redirect: 'manual',
@@ -441,7 +442,7 @@ test('set `redirects` config property to extglob wildcard path', async t => {
 			source: 'face/+(mask1|mask2)/ideal',
 			destination
 		}]
-	 });
+	});
 
 	const response = await fetch(`${url}/face/mask1/ideal`, {
 		redirect: 'manual',
@@ -458,7 +459,7 @@ test('set `redirects` config property to path segment', async t => {
 			source: 'face/:segment',
 			destination: 'mask/:segment'
 		}]
-	 });
+	});
 
 	const response = await fetch(`${url}/face/me`, {
 		redirect: 'manual',
@@ -478,7 +479,7 @@ test('set `redirects` config property to wildcard path and `trailingSlash` to `t
 			source: 'face/**',
 			destination: 'testing'
 		}]
-	 });
+	});
 
 	const response = await fetch(url + target, {
 		redirect: 'manual',
@@ -498,7 +499,7 @@ test('set `redirects` config property to wildcard path and `trailingSlash` to `f
 			source: 'face/**',
 			destination: 'testing'
 		}]
-	 });
+	});
 
 	const response = await fetch(`${url + target}/`, {
 		redirect: 'manual',
@@ -904,6 +905,40 @@ test('set `unlisted` config property to array', async t => {
 	});
 
 	t.true(existing);
+});
+
+test('set `renderModifiedDate` config property to `true`', async t => {
+	const name = 'special-directory';
+
+	const sub = path.join(fixturesFull, name);
+	const contents = await getDirectoryContents(sub, true);
+	const url = await getUrl({
+		renderModifiedDate: true
+	});
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+
+	const type = response.headers.get('content-type');
+	t.is(type, 'text/html; charset=utf-8');
+	// Match to Year
+	t.true(contents.every(() => text.match(/\<small\>([12]\d{3})-/gm)));
+});
+
+test('set `renderModifiedDate` config property to `false`', async t => {
+	const name = 'special-directory';
+
+	const sub = path.join(fixturesFull, name);
+	const contents = await getDirectoryContents(sub, true);
+	const url = await getUrl({
+		renderModifiedDate: false
+	});
+	const response = await fetch(`${url}/${name}`);
+	const text = await response.text();
+
+	const type = response.headers.get('content-type');
+	t.is(type, 'text/html; charset=utf-8');
+	// Match to Year
+	t.falsy(contents.every(() => text.match(/\<small\>([12]\d{3})-/gm)));
 });
 
 test('set `createReadStream` handler to async function', async t => {
