@@ -3,6 +3,7 @@ const {promisify} = require('util');
 const path = require('path');
 const {createHash} = require('crypto');
 const {realpath, lstat, createReadStream, readdir} = require('fs');
+const {URL} = require('url');
 
 // Packages
 const url = require('fast-url-parser');
@@ -14,6 +15,7 @@ const bytes = require('bytes');
 const contentDisposition = require('content-disposition');
 const isPathInside = require('path-is-inside');
 const parseRange = require('range-parser');
+const httpProxy = require('http-proxy');
 
 // Other
 const directoryTemplate = require('./directory');
@@ -38,7 +40,11 @@ const calculateSha = (handlers, absolutePath) =>
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
 	const slashed = slasher(source);
-	const resolvedPath = path.posix.resolve(requestPath);
+	let resolvedPath = path.posix.resolve(requestPath);
+
+	if (requestPath.endsWith('/')) {
+		resolvedPath = `${resolvedPath}/`;
+	}
 
 	let results = null;
 
@@ -177,6 +183,32 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 			return {
 				target,
 				statusCode: type || defaultType
+			};
+		}
+	}
+
+	return null;
+};
+
+const shouldProxy = (decodedPath, {proxy = []}, onError) => {
+	for (let index = 0; index < proxy.length; index++) {
+		const {source, destination, ...options} = proxy[index];
+		const matches = sourceMatches(source, decodedPath, true);
+
+		if (matches) {
+			const u = new URL(destination);
+
+			const server = httpProxy.createProxyServer({
+				changeOrigin: true,
+				target: u.origin,
+				...options
+			});
+
+			server.on('error', onError);
+
+			return {
+				server,
+				target: toTarget(source, u.pathname, decodedPath)
 			};
 		}
 	}
@@ -588,6 +620,21 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		});
 
 		response.end();
+		return;
+	}
+
+	const proxy = shouldProxy(relativePath, config, err =>
+		internalError(absolutePath, response, acceptsJSON, current, handlers, config, err));
+
+	if (proxy) {
+		try {
+			const o = url.parse(request.url);
+			request.url = o.search ? `${proxy.target}${o.search}` : proxy.target;
+			proxy.server.web(request, response);
+		} catch (err) {
+			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+		}
+
 		return;
 	}
 
