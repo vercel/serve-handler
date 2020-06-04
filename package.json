@@ -30,7 +30,7 @@
     "@zeit/eslint-config-node": "0.2.13",
     "@zeit/git-hooks": "0.1.4",
     "ava": "2.2.0",
-    "codecov": "3.0.2",
+    "codecov": "3.6.5",
     "commander": "2.15.1",
     "dot": "1.1.2",
     "eslint": "6.1.0",
