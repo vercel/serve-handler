@@ -1,11 +1,10 @@
 # serve-handler
 
-[![Build Status](https://circleci.com/gh/zeit/serve-handler.svg?&style=shield)](https://circleci.com/gh/zeit/serve-handler)
-[![codecov](https://codecov.io/gh/zeit/serve-handler/branch/master/graph/badge.svg)](https://codecov.io/gh/zeit/serve-handler)
+[![Build Status](https://circleci.com/gh/vercel/serve-handler.svg?&style=shield)](https://circleci.com/gh/vercel/serve-handler)
+[![codecov](https://codecov.io/gh/vercel/serve-handler/branch/master/graph/badge.svg)](https://codecov.io/gh/vercel/serve-handler)
 [![install size](https://packagephobia.now.sh/badge?p=serve-handler)](https://packagephobia.now.sh/result?p=serve-handler)
-[![Join the community on Spectrum](https://withspectrum.github.io/badge/badge.svg)](https://spectrum.chat/zeit)
 
-This package represents the core of [serve](https://github.com/zeit/serve). It can be plugged into any HTTP server and is responsible for routing requests and handling responses.
+This package represents the core of [serve](https://github.com/vercel/serve). It can be plugged into any HTTP server and is responsible for routing requests and handling responses.
 
 In order to customize the default behaviour, you can also pass custom routing rules, provide your own methods for interacting with the file system and much more.
 
@@ -23,7 +22,7 @@ You can also use [npm](https://www.npmjs.com/) instead, if you'd like:
 npm install serve-handler
 ```
 
-Next, add it to your HTTP server. Here's an example using [micro](https://github.com/zeit/micro):
+Next, add it to your HTTP server. Here's an example using [micro](https://github.com/vercel/micro):
 
 ```js
 const handler = require('serve-handler');
@@ -313,23 +312,9 @@ await handler(request, response, undefined, {
 
 **NOTE:** It's important that – for native methods like `createReadStream` – all arguments are passed on to the native call.
 
-## Use Cases
-
-There are two environments in which [ZEIT](https://zeit.co) uses this package:
-
-### Production
-
-When deploying your static project to [Now](https://zeit.co/now), you can add any of the [configuration options](https://github.com/zeit/serve-handler#options) to the `static` property within `now.json` and they will be considered when handling requests to your deployment.
-
-### Development
-
-When testing your project on your local device, we suggest using [serve](https://github.com/zeit/serve).
-
-Since it comes with support for `serve-handler` out of the box, you can create a `serve.json` file to customize its behavior. It will also read the configuration from `static` inside `now.json`.
-
 ## Author
 
-Leo Lamprecht ([@notquiteleo](https://twitter.com/notquiteleo)) - [ZEIT](https://zeit.co)
+Leo Lamprecht ([@notquiteleo](https://twitter.com/notquiteleo)) - [Vercel](https://vercel.com)
 
 
 [etag]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
