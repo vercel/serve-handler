@@ -278,6 +278,20 @@ test('set `trailingSlash` config property to `false`', async t => {
 	t.is(location, target);
 });
 
+test('set `cleanUrls` config property should prevent open redirects', async t => {
+	const url = await getUrl({
+		cleanUrls: true
+	});
+
+	const response = await fetch(`${url}//haveibeenpwned.com/index`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url}/haveibeenpwned.com`);
+});
+
 test('set `rewrites` config property to wildcard path', async t => {
 	const destination = '.dotfile';
 	const related = path.join(fixturesFull, destination);

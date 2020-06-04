@@ -127,15 +127,19 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 		return null;
 	}
 
-	let cleanedUrl = false;
-
 	// By stripping the HTML parts from the decoded
 	// path *before* handling the trailing slash, we make
 	// sure that only *one* redirect occurs if both
 	// config options are used.
 	if (cleanUrl && matchHTML.test(decodedPath)) {
 		decodedPath = decodedPath.replace(matchHTML, '');
-		cleanedUrl = true;
+		if (decodedPath.indexOf('//') > -1) {
+			decodedPath = decodedPath.replace(/\/+/g, '/');
+		}
+		return {
+			target: ensureSlashStart(decodedPath),
+			statusCode: defaultType
+		};
 	}
 
 	if (slashing) {
@@ -161,13 +165,6 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 				statusCode: defaultType
 			};
 		}
-	}
-
-	if (cleanedUrl) {
-		return {
-			target: ensureSlashStart(decodedPath),
-			statusCode: defaultType
-		};
 	}
 
 	// This is currently the fastest way to
@@ -412,6 +409,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			return 1;
 		}
 
+		/* istanbul ignore next */
 		if (a.base < b.base) {
 			return -1;
 		}
