@@ -409,6 +409,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			return 1;
 		}
 
+		/* istanbul ignore next */
 		if (a.base < b.base) {
 			return -1;
 		}
