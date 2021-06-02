@@ -111,7 +111,7 @@ However, you can also restrict it to certain paths:
 
 ### rewrites (Array)
 
-If you want your visitors to receive a response under a certain path, but actually serve a completely different one behind the curtains, this option is what you need.  
+If you want your visitors to receive a response under a certain path, but actually serve a completely different one behind the curtains, this option is what you need.
 
 Rewrites will only be applied if no file with the requested path was found.
 
