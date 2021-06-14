@@ -170,13 +170,14 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 	// This is currently the fastest way to
 	// iterate over an array
 	for (let index = 0; index < redirects.length; index++) {
-		const {source, destination, type} = redirects[index];
+		const {source, destination, type, preserveQuery} = redirects[index];
 		const target = toTarget(source, destination, decodedPath);
 
 		if (target) {
 			return {
 				target,
-				statusCode: type || defaultType
+				statusCode: type || defaultType,
+        preserveQuery: Boolean(preserveQuery)
 			};
 		}
 	}
@@ -583,8 +584,13 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const redirect = shouldRedirect(relativePath, config, cleanUrl);
 
 	if (redirect) {
+		let Location = redirect.target
+    if (redirect.preserveQuery) {
+      const parsedUrl = url.parse(request.url)
+      Location = `${Location}${parsedUrl.search || ''}${parsedUrl.hash || ''}`
+    }
 		response.writeHead(redirect.statusCode, {
-			Location: encodeURI(redirect.target)
+			Location: encodeURI(Location)
 		});
 
 		response.end();
