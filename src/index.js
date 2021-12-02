@@ -85,7 +85,7 @@ const toTarget = (source, destination, previousPath) => {
 		props[name] = results[index + 1];
 	}
 
-	return toPath(props);
+	return toPath(props, { encode: _ => _ });
 };
 
 const applyRewrites = (requestPath, rewrites = [], repetitive) => {
