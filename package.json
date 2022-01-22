@@ -36,7 +36,7 @@
     "eslint": "6.1.0",
     "fs-extra": "6.0.1",
     "micro": "9.3.2",
-    "node-fetch": "2.6.1",
+    "node-fetch": "3.1.1",
     "nyc": "14.1.1",
     "request": "2.87.0",
     "sleep-promise": "6.0.0",
