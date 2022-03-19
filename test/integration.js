@@ -1196,7 +1196,7 @@ test('range request', async t => {
 	t.is(response.status, 206);
 
 	const text = await response.text();
-	const spec = content.toString().substr(0, 11);
+	const spec = content.toString().slice(0, 11);
 
 	t.is(text, spec);
 });
