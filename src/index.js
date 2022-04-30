@@ -14,6 +14,7 @@ const bytes = require('bytes');
 const contentDisposition = require('content-disposition');
 const isPathInside = require('path-is-inside');
 const parseRange = require('range-parser');
+const ipaddr = require('ipaddr.js');
 
 // Other
 const directoryTemplate = require('./directory');
@@ -545,7 +546,26 @@ const getHandlers = methods => Object.assign({
 	sendError
 }, methods);
 
+const whitelistApplier = (request, whitelist) => {
+	let ip = request.ip || request.connection.remoteAddress || request.socket.remoteAddress || request.connection.socket.remoteAddress;
+
+	if (ipaddr.isValid(ip)) {
+		ip = ipaddr.process(ip).toString();
+	}
+
+	return whitelist.includes(ip);
+};
+
 module.exports = async (request, response, config = {}, methods = {}) => {
+	if (config.whitelist) {
+		const requestIsAllowed = await whitelistApplier(request, config.whitelist);
+		if (!requestIsAllowed) {
+			const err = new Error('Forbidden');
+			err.statusCode = 403;
+			throw err;
+		}
+	}
+
 	const cwd = process.cwd();
 	const current = config.public ? path.resolve(cwd, config.public) : cwd;
 	const handlers = getHandlers(methods);
