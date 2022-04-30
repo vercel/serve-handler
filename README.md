@@ -59,6 +59,7 @@ You can use any of the following options:
 | [`renderSingle`](#rendersingle-boolean)              | If a directory only contains one file, render it                      |
 | [`symlinks`](#symlinks-boolean)                      | Resolve symlinks instead of rendering a 404 error                     |
 | [`etag`](#etag-boolean)                              | Calculate a strong `ETag` response header, instead of `Last-Modified` |
+| [`whitelist`](#whitelist-array)                      | If exists, Only IPs in this list are allowed to access resources      |
 
 ### public (String)
 
