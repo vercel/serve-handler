@@ -304,7 +304,7 @@ These are the methods used by the package (they can all return a `Promise` or be
 await handler(request, response, undefined, {
   lstat(path) {},
   realpath(path) {},
-  createReadStream(path, config) {}
+  createReadStream(path, config) {},
   readdir(path) {},
   sendError(absolutePath, response, acceptsJSON, root, handlers, config, error) {}
 });
