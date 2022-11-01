@@ -1,7 +1,6 @@
 # serve-handler
 
-[![Build Status](https://circleci.com/gh/vercel/serve-handler.svg?&style=shield)](https://circleci.com/gh/vercel/serve-handler)
-[![codecov](https://codecov.io/gh/vercel/serve-handler/branch/master/graph/badge.svg)](https://codecov.io/gh/vercel/serve-handler)
+[![codecov](https://codecov.io/gh/vercel/serve-handler/branch/main/graph/badge.svg)](https://codecov.io/gh/vercel/serve-handler)
 [![install size](https://packagephobia.now.sh/badge?p=serve-handler)](https://packagephobia.now.sh/result?p=serve-handler)
 
 This package represents the core of [serve](https://github.com/vercel/serve). It can be plugged into any HTTP server and is responsible for routing requests and handling responses.
