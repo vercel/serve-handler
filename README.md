@@ -136,7 +136,12 @@ You can also use so-called "routing segments" as follows:
 
 Now, if a visitor accesses `/projects/123/edit`, it will respond with the file `/edit-project-123.html`.
 
-**NOTE:** The paths can contain globs (matched using [minimatch](https://github.com/isaacs/minimatch)) or regular expressions (match using [path-to-regexp](https://github.com/pillarjs/path-to-regexp)).
+**NOTES:**
+ * The paths can contain globs (matched using [minimatch](https://github.com/isaacs/minimatch)) or regular expressions (match using [path-to-regexp](https://github.com/pillarjs/path-to-regexp)).
+ * For a single request, multiple rewrite rules may take effect.  
+   * Rules are applied recursively, with rewritten paths being used as the source for subsequent recursive steps:
+     * On each recursive step, rules are always tested in the order that they were originally specified.
+     * Once a rule is matched, the matching rule is removed from subsequent recursive steps.
 
 ### redirects (Array)
 
