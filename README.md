@@ -113,6 +113,8 @@ However, you can also restrict it to certain paths:
 
 If you want your visitors to receive a response under a certain path, but actually serve a completely different one behind the curtains, this option is what you need.
 
+Rewrites will only be applied if no file with the requested path was found.
+
 It's perfect for [single page applications](https://en.wikipedia.org/wiki/Single-page_application) (SPAs), for example:
 
 ```json
@@ -120,6 +122,16 @@ It's perfect for [single page applications](https://en.wikipedia.org/wiki/Single
   "rewrites": [
     { "source": "app/**", "destination": "/index.html" },
     { "source": "projects/*/edit", "destination": "/edit-project.html" }
+  ]
+}
+```
+
+Or simply:
+
+```json
+{
+  "rewrites": [
+    { "source": "**", "destination": "/index.html" }
   ]
 }
 ```
