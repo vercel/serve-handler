@@ -14,8 +14,11 @@ jobs:
         timeout-minutes: 5 # See https://github.com/actions/cache/issues/810
         with:
           cache: 'yarn'
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
 
       - run: yarn install --network-timeout 1000000 --frozen-lockfile
+      - run: npm run test
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
