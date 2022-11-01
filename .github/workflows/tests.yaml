@@ -17,6 +17,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'yarn'
+
       - run: yarn install --network-timeout 1000000 --frozen-lockfile
       - run: yarn test
       - run: yarn run coverage
+
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3

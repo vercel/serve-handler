@@ -7,7 +7,7 @@
     "test": "yarn run test-lint && yarn run test-integration",
     "test-lint": "zeit-eslint --ext .jsx,.js .",
     "test-integration": "nyc --reporter=html --reporter=text ava test/integration.js",
-    "coverage": "nyc report --reporter=text-lcov > coverage.lcov && codecov",
+    "coverage": "nyc report --reporter=text-lcov > coverage.lcov",
     "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint",
     "build-views": "dottojs -s ./src -d ./src",
     "prepublish": "yarn run build-views"
