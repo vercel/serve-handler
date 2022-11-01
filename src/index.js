@@ -230,7 +230,7 @@ const getHeaders = async (handlers, config, current, absolutePath, stats) => {
 				sha = await calculateSha(handlers, absolutePath);
 				etags.set(absolutePath, [stats.mtime, sha]);
 			}
-			defaultHeaders['ETag'] = `"${sha}"`;
+			defaultHeaders['ETag'] = `W/"${sha}"`;
 		} else {
 			defaultHeaders['Last-Modified'] = stats.mtime.toUTCString();
 		}
