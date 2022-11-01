@@ -97,7 +97,7 @@ const applyRewrites = (requestPath, rewrites = [], repetitive) => {
 	const fallback = repetitive ? requestPath : null;
 
 	if (rewritesCopy.length === 0) {
-		return fallback;
+		return decodeURIComponent(fallback);
 	}
 
 	for (let index = 0; index < rewritesCopy.length; index++) {
