@@ -1356,9 +1356,7 @@ test('A bad symlink should be a 404', async t => {
 	t.is(response.status, 404);
 
 	const text = await response.text();
-	const spec = 'The requested path could not be found';
-
-	t.is(text, spec);
+	t.is(text.trim(), '<span>Not Found</span>');
 });
 
 test('etag header is set', async t => {
