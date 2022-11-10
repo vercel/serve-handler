@@ -66,7 +66,7 @@ const sourceMatches = (source, requestPath, allowSegments) => {
 	return null;
 };
 
-const toTarget = (source, destination, previousPath) => {
+const toTarget = (source, destination, previousPath, raw) => {
 	const matches = sourceMatches(source, previousPath, true);
 
 	if (!matches) {
@@ -85,7 +85,7 @@ const toTarget = (source, destination, previousPath) => {
 		props[name] = results[index + 1];
 	}
 
-	return toPath(props);
+	return toPath(props, raw ? {encode: value => value} : {});
 };
 
 const applyRewrites = (requestPath, rewrites = [], repetitive) => {
@@ -101,8 +101,8 @@ const applyRewrites = (requestPath, rewrites = [], repetitive) => {
 	}
 
 	for (let index = 0; index < rewritesCopy.length; index++) {
-		const {source, destination} = rewrites[index];
-		const target = toTarget(source, destination, requestPath);
+		const {source, destination, raw} = rewrites[index];
+		const target = toTarget(source, destination, requestPath, raw);
 
 		if (target) {
 			// Remove rules that were already applied
