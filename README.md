@@ -54,6 +54,7 @@ You can use any of the following options:
 | [`redirects`](#redirects-array)                      | Forward paths to different paths or external URLs                     |
 | [`headers`](#headers-array)                          | Set custom headers for specific paths                                 |
 | [`directoryListing`](#directorylisting-booleanarray) | Disable directory listing or restrict it to certain paths             |
+| [`renderModifiedDate`](#rendermodifieddate-boolean)  | Show modified date for files in directory listing                     |
 | [`unlisted`](#unlisted-array)                        | Exclude paths from the directory listing                              |
 | [`trailingSlash`](#trailingslash-boolean)            | Remove or add trailing slashes to all paths                           |
 | [`renderSingle`](#rendersingle-boolean)              | If a directory only contains one file, render it                      |
@@ -214,6 +215,18 @@ If you'd like to disable this for all paths, set this option to `false`. Further
 ```
 
 **NOTE:** The paths can only contain globs that are matched using [minimatch](https://github.com/isaacs/minimatch).
+
+### renderModifiedDate (Boolean)
+
+Render the modified date of a file next to its filename when listing a directory.
+
+This is disabled by default. To enable set `renderModifiedDate` to `true`:
+
+```js
+{
+  "renderModifiedDate": true
+}
+```
 
 ### unlisted (Array)
 

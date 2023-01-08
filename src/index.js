@@ -2,7 +2,7 @@
 const {promisify} = require('util');
 const path = require('path');
 const {createHash} = require('crypto');
-const {realpath, lstat, createReadStream, readdir} = require('fs');
+const {realpath, lstat, createReadStream, readdir, stat} = require('fs');
 
 // Packages
 const url = require('fast-url-parser');
@@ -323,7 +323,7 @@ const canBeListed = (excluded, file) => {
 };
 
 const renderDirectory = async (current, acceptsJSON, handlers, methods, config, paths) => {
-	const {directoryListing, trailingSlash, unlisted = [], renderSingle} = config;
+	const {directoryListing, trailingSlash, unlisted = [], renderSingle, renderModifiedDate} = config;
 	const slashSuffix = typeof trailingSlash === 'boolean' ? (trailingSlash ? '/' : '') : '/';
 	const {relativePath, absolutePath} = paths;
 
@@ -380,6 +380,11 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 				unitSeparator: ' ',
 				decimalPlaces: 0
 			});
+			if (renderModifiedDate) {
+				const fileStats = await handlers.stat(path.join(absolutePath, file));
+
+				details.mtime = fileStats.mtime.toUTCString();
+			}
 		}
 
 		details.title = details.base;
@@ -542,6 +547,7 @@ const getHandlers = methods => Object.assign({
 	realpath: promisify(realpath),
 	createReadStream,
 	readdir: promisify(readdir),
+	stat: promisify(stat),
 	sendError
 }, methods);
 
