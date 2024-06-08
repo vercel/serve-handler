@@ -314,7 +314,7 @@ await handler(request, response, undefined, {
 
 ## Author
 
-Leo Lamprecht ([@notquiteleo](https://twitter.com/notquiteleo)) - [Vercel](https://vercel.com)
+Leo Lamprecht ([@leo](https://x.com/leo)) - [Vercel](https://vercel.com)
 
 
 [etag]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/ETag
