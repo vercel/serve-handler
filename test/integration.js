@@ -1344,6 +1344,21 @@ test('allow symlinks by setting the option', async t => {
 	t.is(text, spec);
 });
 
+test('A bad symlink should be a 404', async t => {
+	const name = 'symlinks/a-bad-link';
+
+	const url = await getUrl({
+		symlinks: true
+	});
+
+	const response = await fetch(`${url}/${name}`);
+
+	t.is(response.status, 404);
+
+	const text = await response.text();
+	t.is(text.trim(), '<span>Not Found</span>');
+});
+
 test('etag header is set', async t => {
 	const url = await getUrl({
 		renderSingle: true,
