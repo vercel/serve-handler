@@ -359,6 +359,10 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		}
 
 		details.relative = path.join(relativePath, details.base);
+		details.href = details.relative
+			.split('/')
+			.map(p => encodeURIComponent(p))
+			.join('/');
 
 		if (stats.isDirectory()) {
 			details.base += slashSuffix;
@@ -393,14 +397,15 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 
 	const toRoot = path.relative(current, absolutePath);
 	const directory = path.join(path.basename(current), toRoot, slashSuffix);
-	const pathParts = directory.split(path.sep).filter(Boolean);
+	const pathParts = directory.split(path.sep)
+		.map(p => encodeURIComponent(p))
+		.filter(Boolean);
 
 	// Sort to list directories first, then sort alphabetically
 	files = files.sort((a, b) => {
 		const aIsDir = a.type === 'directory';
 		const bIsDir = b.type === 'directory';
 
-		/* istanbul ignore next */
 		if (aIsDir && !bIsDir) {
 			return -1;
 		}
@@ -409,12 +414,10 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			return 1;
 		}
 
-		/* istanbul ignore next */
 		if (a.base < b.base) {
 			return -1;
 		}
 
-		/* istanbul ignore next */
 		return 0;
 	}).filter(Boolean);
 
@@ -428,6 +431,7 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			base: '..',
 			relative,
 			title: relative,
+			href: relative,
 			ext: ''
 		});
 	}
@@ -448,8 +452,8 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 		parents.shift();
 
 		subPaths.push({
-			name: pathParts[index] + (isLast ? slashSuffix : '/'),
-			url: index === 0 ? '' : parents.join('/') + slashSuffix
+			name: decodeURIComponent(pathParts[index]) + (isLast ? slashSuffix : '/'),
+			url: index === 0 ? '' : parents.map(p => encodeURIComponent(p)).join('/') + slashSuffix
 		});
 	}
 
