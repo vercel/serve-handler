@@ -1,8 +1,7 @@
 // Native
-const path = require('path');
+const path = require('node:path');
 
 // Packages
-const test = require('ava');
 const listen = require('test-listen');
 const micro = require('micro');
 const fetch = require('node-fetch');
@@ -10,7 +9,7 @@ const fs = require('fs-extra');
 const sleep = require('sleep-promise');
 
 // Utilities
-const handler = require('../');
+const handler = require('../src');
 const errorTemplate = require('../src/error');
 
 const fixturesTarget = 'test/fixtures';
@@ -28,14 +27,14 @@ const getUrl = (customConfig, handlers) => {
 	return listen(server);
 };
 
-const getDirectoryContents = async (location = fixturesFull, sub, exclude = []) => {
+const getDirectoryContents = async (location, sub, exclude = []) => {
 	const excluded = [
 		'.DS_Store',
 		'.git',
 		...exclude
 	];
 
-	const content = await fs.readdir(location);
+	const content = await fs.readdir(location || fixturesFull);
 
 	if (sub) {
 		content.unshift('..');
@@ -44,7 +43,7 @@ const getDirectoryContents = async (location = fixturesFull, sub, exclude = []) 
 	return content.filter(item => !excluded.includes(item));
 };
 
-test('render html directory listing', async t => {
+test('render html directory listing', async () => {
 	const contents = await getDirectoryContents();
 
 	const url = await getUrl();
@@ -53,11 +52,11 @@ test('render html directory listing', async t => {
 
 	const type = response.headers.get('content-type');
 
-	t.is(type, 'text/html; charset=utf-8');
-	t.true(contents.every(item => text.includes(item)));
+	expect(type).toBe('text/html; charset=utf-8');
+	expect(contents.every(item => text.includes(item))).toBe(true);
 });
 
-test('render json directory listing', async t => {
+test('render json directory listing', async () => {
 	const contents = await getDirectoryContents();
 	const url = await getUrl();
 
@@ -68,7 +67,7 @@ test('render json directory listing', async t => {
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json; charset=utf-8');
+	expect(type).toBe('application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -77,10 +76,10 @@ test('render json directory listing', async t => {
 		return contents.includes(full);
 	});
 
-	t.true(existing);
+	expect(existing).toBe(true);
 });
 
-test('render html sub directory listing', async t => {
+test('render html sub directory listing', async () => {
 	const name = 'special-directory';
 
 	const sub = path.join(fixturesFull, name);
@@ -90,12 +89,12 @@ test('render html sub directory listing', async t => {
 	const text = await response.text();
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'text/html; charset=utf-8');
+	expect(type).toBe('text/html; charset=utf-8');
 
-	t.true(contents.every(item => text.includes(item)));
+	expect(contents.every(item => text.includes(item))).toBe(true);
 });
 
-test('render json sub directory listing', async t => {
+test('render json sub directory listing', async () => {
 	const name = 'special-directory';
 
 	const sub = path.join(fixturesFull, name);
@@ -109,7 +108,7 @@ test('render json sub directory listing', async t => {
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json; charset=utf-8');
+	expect(type).toBe('application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -118,10 +117,10 @@ test('render json sub directory listing', async t => {
 		return contents.includes(full);
 	});
 
-	t.true(existing);
+	expect(existing).toBe(true);
 });
 
-test('render json sub directory listing with custom stat handler', async t => {
+test('render json sub directory listing with custom stat handler', async () => {
 	const name = 'special-directory';
 
 	const sub = path.join(fixturesFull, name);
@@ -131,9 +130,9 @@ test('render json sub directory listing with custom stat handler', async t => {
 	const url = await getUrl(undefined, {
 		lstat: (location, isDirectoryListing) => {
 			if (contents.includes(path.basename(location))) {
-				t.true(isDirectoryListing);
+				expect(isDirectoryListing).toBe(true);
 			} else {
-				t.falsy(isDirectoryListing);
+				expect(isDirectoryListing).toBeFalsy();
 			}
 
 			return fs.lstat(location);
@@ -147,7 +146,7 @@ test('render json sub directory listing with custom stat handler', async t => {
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json; charset=utf-8');
+	expect(type).toBe('application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -156,10 +155,10 @@ test('render json sub directory listing with custom stat handler', async t => {
 		return contents.includes(full);
 	});
 
-	t.true(existing);
+	expect(existing).toBe(true);
 });
 
-test('render dotfile', async t => {
+test('render dotfile', async () => {
 	const name = '.dotfile';
 	const related = path.join(fixturesFull, name);
 
@@ -168,10 +167,10 @@ test('render dotfile', async t => {
 	const response = await fetch(`${url}/${name}`);
 	const text = await response.text();
 
-	t.deepEqual(content, text);
+	expect(content).toEqual(text);
 });
 
-test('render json file', async t => {
+test('render json file', async () => {
 	const name = 'object.json';
 	const related = path.join(fixturesFull, name);
 
@@ -180,26 +179,26 @@ test('render json file', async t => {
 	const response = await fetch(`${url}/${name}`);
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json; charset=utf-8');
+	expect(type).toBe('application/json; charset=utf-8');
 
 	const text = await response.text();
 	const spec = JSON.parse(text);
 
-	t.deepEqual(spec, content);
+	expect(spec).toEqual(content);
 });
 
-test('try to render non-existing json file', async t => {
+test('try to render non-existing json file', async () => {
 	const name = 'mask-off.json';
 	const url = await getUrl();
 	const response = await fetch(`${url}/${name}`);
 
 	const type = response.headers.get('content-type');
 
-	t.is(type, 'text/html; charset=utf-8');
-	t.is(response.status, 404);
+	expect(type).toBe('text/html; charset=utf-8');
+	expect(response.status).toBe(404);
 });
 
-test('try to render non-existing json file and `stat` errors', async t => {
+test('try to render non-existing json file and `stat` errors', async () => {
 	const name = 'mask-off.json';
 	const message = 'I am an error';
 
@@ -220,17 +219,17 @@ test('try to render non-existing json file and `stat` errors', async t => {
 	const response = await fetch(`${url}/${name}`);
 	const text = await response.text();
 
-	t.is(response.status, 500);
+	expect(response.status).toBe(500);
 
 	const content = errorTemplate({
 		statusCode: 500,
 		message: 'A server error has occurred'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('set `trailingSlash` config property to `true`', async t => {
+test('set `trailingSlash` config property to `true`', async () => {
 	const url = await getUrl({
 		trailingSlash: true
 	});
@@ -243,10 +242,10 @@ test('set `trailingSlash` config property to `true`', async t => {
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${target}/`);
+	expect(location).toBe(`${target}/`);
 });
 
-test('set `trailingSlash` config property to any boolean and remove multiple slashes', async t => {
+test('set `trailingSlash` config property to any boolean and remove multiple slashes', async () => {
 	const url = await getUrl({
 		trailingSlash: true
 	});
@@ -259,10 +258,10 @@ test('set `trailingSlash` config property to any boolean and remove multiple sla
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, target);
+	expect(location).toBe(target);
 });
 
-test('set `trailingSlash` config property to `false`', async t => {
+test('set `trailingSlash` config property to `false`', async () => {
 	const url = await getUrl({
 		trailingSlash: false
 	});
@@ -275,10 +274,10 @@ test('set `trailingSlash` config property to `false`', async t => {
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, target);
+	expect(location).toBe(target);
 });
 
-test('set `cleanUrls` config property should prevent open redirects', async t => {
+test('set `cleanUrls` config property should prevent open redirects', async () => {
 	const url = await getUrl({
 		cleanUrls: true
 	});
@@ -289,10 +288,10 @@ test('set `cleanUrls` config property should prevent open redirects', async t =>
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${url}/haveibeenpwned.com`);
+	expect(location).toBe(`${url}/haveibeenpwned.com`);
 });
 
-test('set `rewrites` config property to wildcard path', async t => {
+test('set `rewrites` config property to wildcard path', async () => {
 	const destination = '.dotfile';
 	const related = path.join(fixturesFull, destination);
 	const content = await fs.readFile(related, 'utf8');
@@ -307,10 +306,10 @@ test('set `rewrites` config property to wildcard path', async t => {
 	const response = await fetch(`${url}/face/delete`);
 	const text = await response.text();
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('set `rewrites` config property to non-matching path', async t => {
+test('set `rewrites` config property to non-matching path', async () => {
 	const destination = '404.html';
 	const related = path.join(fixturesFull, destination);
 	const content = await fs.readFile(related, 'utf8');
@@ -325,10 +324,10 @@ test('set `rewrites` config property to non-matching path', async t => {
 	const response = await fetch(`${url}/mask/delete`);
 	const text = await response.text();
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('set `rewrites` config property to one-star wildcard path', async t => {
+test('set `rewrites` config property to one-star wildcard path', async () => {
 	const destination = '.dotfile';
 	const related = path.join(fixturesFull, destination);
 	const content = await fs.readFile(related, 'utf8');
@@ -343,10 +342,10 @@ test('set `rewrites` config property to one-star wildcard path', async t => {
 	const response = await fetch(`${url}/face/delete/mask`);
 	const text = await response.text();
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('set `rewrites` config property to path segment', async t => {
+test('set `rewrites` config property to path segment', async () => {
 	const related = path.join(fixturesFull, 'object.json');
 	const content = await fs.readJSON(related);
 
@@ -360,10 +359,10 @@ test('set `rewrites` config property to path segment', async t => {
 	const response = await fetch(`${url}/face/object`);
 	const json = await response.json();
 
-	t.deepEqual(json, content);
+	expect(json).toEqual(content);
 });
 
-test('set `redirects` config property to wildcard path', async t => {
+test('set `redirects` config property to wildcard path', async () => {
 	const destination = 'testing';
 
 	const url = await getUrl({
@@ -379,10 +378,10 @@ test('set `redirects` config property to wildcard path', async t => {
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${url}/${destination}`);
+	expect(location).toBe(`${url}/${destination}`);
 });
 
-test('set `redirects` config property to a negated wildcard path', async t => {
+test('set `redirects` config property to a negated wildcard path', async () => {
 	const destination = 'testing';
 
 	const url = await getUrl({
@@ -398,7 +397,7 @@ test('set `redirects` config property to a negated wildcard path', async t => {
 	});
 
 	const locationTruthy = responseTruthy.headers.get('location');
-	t.is(locationTruthy, `${url}/${destination}`);
+	expect(locationTruthy).toBe(`${url}/${destination}`);
 
 	const responseFalsy = await fetch(`${url}/face/mask`, {
 		redirect: 'manual',
@@ -406,10 +405,10 @@ test('set `redirects` config property to a negated wildcard path', async t => {
 	});
 
 	const locationFalsy = responseFalsy.headers.get('location');
-	t.falsy(locationFalsy);
+	expect(locationFalsy).toBeFalsy();
 });
 
-test('set `redirects` config property to wildcard path and do not match', async t => {
+test('set `redirects` config property to wildcard path and do not match', async () => {
 	const destination = 'testing';
 
 	const url = await getUrl({
@@ -425,10 +424,10 @@ test('set `redirects` config property to wildcard path and do not match', async 
 	});
 
 	const location = response.headers.get('location');
-	t.falsy(location);
+	expect(location).toBeFalsy();
 });
 
-test('set `redirects` config property to one-star wildcard path', async t => {
+test('set `redirects` config property to one-star wildcard path', async () => {
 	const destination = 'testing';
 
 	const url = await getUrl({
@@ -444,10 +443,10 @@ test('set `redirects` config property to one-star wildcard path', async t => {
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${url}/${destination}`);
+	expect(location).toBe(`${url}/${destination}`);
 });
 
-test('set `redirects` config property to extglob wildcard path', async t => {
+test('set `redirects` config property to extglob wildcard path', async () => {
 	const destination = 'testing';
 
 	const url = await getUrl({
@@ -463,10 +462,10 @@ test('set `redirects` config property to extglob wildcard path', async t => {
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${url}/${destination}`);
+	expect(location).toBe(`${url}/${destination}`);
 });
 
-test('set `redirects` config property to path segment', async t => {
+test('set `redirects` config property to path segment', async () => {
 	const url = await getUrl({
 		redirects: [{
 			source: 'face/:segment',
@@ -480,10 +479,10 @@ test('set `redirects` config property to path segment', async t => {
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${url}/mask/me`);
+	expect(location).toBe(`${url}/mask/me`);
 });
 
-test('set `redirects` config property to wildcard path and `trailingSlash` to `true`', async t => {
+test('set `redirects` config property to wildcard path and `trailingSlash` to `true`', async () => {
 	const target = '/face/mask';
 
 	const url = await getUrl({
@@ -500,10 +499,10 @@ test('set `redirects` config property to wildcard path and `trailingSlash` to `t
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${url + target}/`);
+	expect(location).toBe(`${url + target}/`);
 });
 
-test('set `redirects` config property to wildcard path and `trailingSlash` to `false`', async t => {
+test('set `redirects` config property to wildcard path and `trailingSlash` to `false`', async () => {
 	const target = '/face/mask';
 
 	const url = await getUrl({
@@ -520,10 +519,10 @@ test('set `redirects` config property to wildcard path and `trailingSlash` to `f
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, url + target);
+	expect(location).toBe(url + target);
 });
 
-test('pass custom handlers', async t => {
+test('pass custom handlers', async () => {
 	const name = '.dotfile';
 
 	// eslint-disable-next-line no-undefined
@@ -536,10 +535,10 @@ test('pass custom handlers', async t => {
 	const text = await response.text();
 	const content = await fs.readFile(path.join(fixturesFull, name), 'utf8');
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('set `headers` to wildcard headers', async t => {
+test('set `headers` to wildcard headers', async () => {
 	const key = 'Cache-Control';
 	const value = 'max-age=7200';
 
@@ -558,10 +557,10 @@ test('set `headers` to wildcard headers', async t => {
 	const response = await fetch(`${url}/docs.md`);
 	const cacheControl = response.headers.get(key);
 
-	t.is(cacheControl, value);
+	expect(cacheControl).toBe(value);
 });
 
-test('set `headers` to fixed headers and check default headers', async t => {
+test('set `headers` to fixed headers and check default headers', async () => {
 	const key = 'Cache-Control';
 	const value = 'max-age=7200';
 
@@ -581,11 +580,11 @@ test('set `headers` to fixed headers and check default headers', async t => {
 	const cacheControl = headers.get(key);
 	const type = headers.get('content-type');
 
-	t.is(cacheControl, value);
-	t.is(type, 'application/json; charset=utf-8');
+	expect(cacheControl).toBe(value);
+	expect(type).toBe('application/json; charset=utf-8');
 });
 
-test('receive not found error', async t => {
+test('receive not found error', async () => {
 	const url = await getUrl({
 		'public': path.join(fixturesFull, 'directory')
 	});
@@ -598,10 +597,10 @@ test('receive not found error', async t => {
 		message: 'The requested path could not be found'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('receive not found error as json', async t => {
+test('receive not found error as json', async () => {
 	const url = await getUrl();
 
 	const response = await fetch(`${url}/not-existing`, {
@@ -612,7 +611,7 @@ test('receive not found error as json', async t => {
 
 	const json = await response.json();
 
-	t.deepEqual(json, {
+	expect(json).toEqual({
 		error: {
 			code: 'not_found',
 			message: 'The requested path could not be found'
@@ -620,15 +619,15 @@ test('receive not found error as json', async t => {
 	});
 });
 
-test('receive custom `404.html` error page', async t => {
+test('receive custom `404.html` error page', async () => {
 	const url = await getUrl();
 	const response = await fetch(`${url}/not-existing`);
 	const text = await response.text();
 
-	t.is(text.trim(), '<span>Not Found</span>');
+	expect(text.trim()).toBe('<span>Not Found</span>');
 });
 
-test('error is still sent back even if reading `404.html` failed', async t => {
+test('error is still sent back even if reading `404.html` failed', async () => {
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
 		lstat: location => {
@@ -643,17 +642,17 @@ test('error is still sent back even if reading `404.html` failed', async t => {
 	const response = await fetch(`${url}/not-existing`);
 	const text = await response.text();
 
-	t.is(response.status, 404);
+	expect(response.status).toBe(404);
 
 	const content = errorTemplate({
 		statusCode: 404,
 		message: 'The requested path could not be found'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('disabled directory listing', async t => {
+test('disabled directory listing', async () => {
 	const url = await getUrl({
 		directoryListing: false
 	});
@@ -661,11 +660,11 @@ test('disabled directory listing', async t => {
 	const response = await fetch(url);
 	const text = await response.text();
 
-	t.is(response.status, 404);
-	t.is(text.trim(), '<span>Not Found</span>');
+	expect(response.status).toBe(404);
+	expect(text.trim()).toBe('<span>Not Found</span>');
 });
 
-test('listing the directory failed', async t => {
+test('listing the directory failed', async () => {
 	const message = 'Internal Server Error';
 
 	// eslint-disable-next-line no-undefined
@@ -678,17 +677,17 @@ test('listing the directory failed', async t => {
 	const response = await fetch(url);
 	const text = await response.text();
 
-	t.is(response.status, 500);
+	expect(response.status).toBe(500);
 
 	const content = errorTemplate({
 		statusCode: 500,
 		message: 'A server error has occurred'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('set `cleanUrls` config property to `true`', async t => {
+test('set `cleanUrls` config property to `true`', async () => {
 	const target = 'directory';
 	const index = path.join(fixturesFull, target, 'index.html');
 
@@ -700,10 +699,10 @@ test('set `cleanUrls` config property to `true`', async t => {
 	const content = await fs.readFile(index, 'utf8');
 	const text = await response.text();
 
-	t.is(content, text);
+	expect(content).toBe(text);
 });
 
-test('set `cleanUrls` config property to array', async t => {
+test('set `cleanUrls` config property to array', async () => {
 	const target = 'directory';
 	const index = path.join(fixturesFull, target, 'index.html');
 
@@ -717,10 +716,10 @@ test('set `cleanUrls` config property to array', async t => {
 	const content = await fs.readFile(index, 'utf8');
 	const text = await response.text();
 
-	t.is(content, text);
+	expect(content).toBe(text);
 });
 
-test('set `cleanUrls` config property to empty array', async t => {
+test('set `cleanUrls` config property to empty array', async () => {
 	const name = 'directory';
 
 	const sub = path.join(fixturesFull, name);
@@ -734,12 +733,12 @@ test('set `cleanUrls` config property to empty array', async t => {
 	const text = await response.text();
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'text/html; charset=utf-8');
+	expect(type).toBe('text/html; charset=utf-8');
 
-	t.true(contents.every(item => text.includes(item)));
+	expect(contents.every(item => text.includes(item))).toBe(true);
 });
 
-test('set `cleanUrls` config property to `true` and try with file', async t => {
+test('set `cleanUrls` config property to `true` and try with file', async () => {
 	const target = '/directory/clean-file';
 
 	const url = await getUrl({
@@ -752,10 +751,10 @@ test('set `cleanUrls` config property to `true` and try with file', async t => {
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${url}${target}`);
+	expect(location).toBe(`${url}${target}`);
 });
 
-test('set `cleanUrls` config property to `true` and not index file found', async t => {
+test('set `cleanUrls` config property to `true` and not index file found', async () => {
 	const contents = await getDirectoryContents();
 	const url = await getUrl({cleanUrls: true});
 
@@ -766,7 +765,7 @@ test('set `cleanUrls` config property to `true` and not index file found', async
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json; charset=utf-8');
+	expect(type).toBe('application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -775,10 +774,10 @@ test('set `cleanUrls` config property to `true` and not index file found', async
 		return contents.includes(full);
 	});
 
-	t.true(existing);
+	expect(existing).toBe(true);
 });
 
-test('set `cleanUrls` config property to `true` and an error occurs', async t => {
+test('set `cleanUrls` config property to `true` and an error occurs', async () => {
 	const target = 'directory';
 	const message = 'Internal Server Error';
 
@@ -797,17 +796,17 @@ test('set `cleanUrls` config property to `true` and an error occurs', async t =>
 	const response = await fetch(`${url}/${target}`);
 	const text = await response.text();
 
-	t.is(response.status, 500);
+	expect(response.status).toBe(500);
 
 	const content = errorTemplate({
 		statusCode: 500,
 		message: 'A server error has occurred'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('error occurs while getting stat of path', async t => {
+test('error occurs while getting stat of path', async () => {
 	const message = 'Internal Server Error';
 
 	// eslint-disable-next-line no-undefined
@@ -827,18 +826,18 @@ test('error occurs while getting stat of path', async t => {
 		message: 'A server error has occurred'
 	});
 
-	t.is(response.status, 500);
-	t.is(text, content);
+	expect(response.status).toBe(500);
+	expect(text).toBe(content);
 });
 
-test('the first `lstat` call should be for a related file', async t => {
+test('the first `lstat` call should be for a related file', async () => {
 	let done = null;
 
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
 		lstat: location => {
 			if (!done) {
-				t.is(path.basename(location), 'index.html');
+				expect(path.basename(location)).toBe('index.html');
 				done = true;
 			}
 
@@ -849,7 +848,7 @@ test('the first `lstat` call should be for a related file', async t => {
 	await fetch(url);
 });
 
-test('the `lstat` call should only be made for files and directories', async t => {
+test('the `lstat` call should only be made for files and directories', async () => {
 	const locations = [];
 
 	// eslint-disable-next-line no-undefined
@@ -862,10 +861,10 @@ test('the `lstat` call should only be made for files and directories', async t =
 
 	await fetch(url);
 
-	t.falsy(locations.some(location => path.basename(location) === '.html'));
+	expect(locations.some(location => path.basename(location) === '.html')).toBeFalsy();
 });
 
-test('error occurs while getting stat of not-found path', async t => {
+test('error occurs while getting stat of not-found path', async () => {
 	const message = 'Internal Server Error';
 	const base = 'not-existing';
 
@@ -883,17 +882,17 @@ test('error occurs while getting stat of not-found path', async t => {
 	const response = await fetch(`${url}/${base}`);
 	const text = await response.text();
 
-	t.is(response.status, 500);
+	expect(response.status).toBe(500);
 
 	const content = errorTemplate({
 		statusCode: 500,
 		message: 'A server error has occurred'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('set `unlisted` config property to array', async t => {
+test('set `unlisted` config property to array', async () => {
 	const unlisted = [
 		'directory'
 	];
@@ -908,7 +907,7 @@ test('set `unlisted` config property to array', async t => {
 	});
 
 	const type = response.headers.get('content-type');
-	t.is(type, 'application/json; charset=utf-8');
+	expect(type).toBe('application/json; charset=utf-8');
 
 	const {files} = await response.json();
 
@@ -917,10 +916,10 @@ test('set `unlisted` config property to array', async t => {
 		return contents.includes(full);
 	});
 
-	t.true(existing);
+	expect(existing).toBe(true);
 });
 
-test('set `createReadStream` handler to async function', async t => {
+test('set `createReadStream` handler to async function', async () => {
 	const name = '.dotfile';
 	const related = path.join(fixturesFull, name);
 	const content = await fs.readFile(related, 'utf8');
@@ -936,10 +935,10 @@ test('set `createReadStream` handler to async function', async t => {
 	const response = await fetch(`${url}/${name}`);
 	const text = await response.text();
 
-	t.deepEqual(content, text);
+	expect(content).toEqual(text);
 });
 
-test('return mime type of the `rewrittenPath` if mime type of `relativePath` is null', async t => {
+test('return mime type of the `rewrittenPath` if mime type of `relativePath` is null', async () => {
 	const url = await getUrl({
 		rewrites: [{
 			source: '**',
@@ -950,25 +949,25 @@ test('return mime type of the `rewrittenPath` if mime type of `relativePath` is 
 	const response = await fetch(`${url}/whatever`);
 	const type = response.headers.get('content-type');
 
-	t.is(type, 'text/html; charset=utf-8');
+	expect(type).toBe('text/html; charset=utf-8');
 });
 
-test('error if trying to traverse path', async t => {
+test('error if trying to traverse path', async () => {
 	const url = await getUrl();
 	const response = await fetch(`${url}/../../test`);
 	const text = await response.text();
 
-	t.is(response.status, 400);
+	expect(response.status).toBe(400);
 
 	const content = errorTemplate({
 		statusCode: 400,
 		message: 'Bad Request'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('render file if directory only contains one', async t => {
+test('render file if directory only contains one', async () => {
 	const directory = 'single-directory';
 	const file = 'content.txt';
 	const related = path.join(fixturesFull, directory, file);
@@ -981,10 +980,10 @@ test('render file if directory only contains one', async t => {
 	const response = await fetch(`${url}/${directory}`);
 	const text = await response.text();
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('correctly handle requests to /index if `cleanUrls` is enabled', async t => {
+test('correctly handle requests to /index if `cleanUrls` is enabled', async () => {
 	const url = await getUrl();
 	const target = `${url}/index`;
 
@@ -994,10 +993,10 @@ test('correctly handle requests to /index if `cleanUrls` is enabled', async t =>
 	});
 
 	const location = response.headers.get('location');
-	t.is(location, `${url}/`);
+	expect(location).toBe(`${url}/`);
 });
 
-test('allow dots in `public` configuration property', async t => {
+test('allow dots in `public` configuration property', async () => {
 	const directory = 'public-folder.test';
 	const root = path.join(fixturesTarget, directory);
 	const file = path.join(fixturesFull, directory, 'index.html');
@@ -1011,26 +1010,26 @@ test('allow dots in `public` configuration property', async t => {
 	const text = await response.text();
 	const content = await fs.readFile(file, 'utf8');
 
-	t.is(response.status, 200);
-	t.is(content, text);
+	expect(response.status).toBe(200);
+	expect(content).toBe(text);
 });
 
-test('error for request with malformed URI', async t => {
+test('error for request with malformed URI', async () => {
 	const url = await getUrl();
 	const response = await fetch(`${url}/%E0%A4%A`);
 	const text = await response.text();
 
-	t.is(response.status, 400);
+	expect(response.status).toBe(400);
 
 	const content = errorTemplate({
 		statusCode: 400,
 		message: 'Bad Request'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('error responses get custom headers', async t => {
+test('error responses get custom headers', async () => {
 	const url = await getUrl({
 		'public': path.join(fixturesTarget, 'single-directory'),
 		'headers': [{
@@ -1045,18 +1044,18 @@ test('error responses get custom headers', async t => {
 	const response = await fetch(`${url}/non-existing`);
 	const text = await response.text();
 
-	t.is(response.status, 404);
-	t.is(response.headers.get('who'), 'me');
+	expect(response.status).toBe(404);
+	expect(response.headers.get('who')).toBe('me');
 
 	const content = errorTemplate({
 		statusCode: 404,
 		message: 'The requested path could not be found'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('modify config in `createReadStream` handler', async t => {
+test('modify config in `createReadStream` handler', async () => {
 	const name = '.dotfile';
 	const related = path.join(fixturesFull, name);
 	const content = await fs.readFile(related, 'utf8');
@@ -1085,11 +1084,11 @@ test('modify config in `createReadStream` handler', async t => {
 	const text = await response.text();
 	const output = response.headers.get(header.key);
 
-	t.deepEqual(content, text);
-	t.deepEqual(output, header.value);
+	expect(content).toEqual(text);
+	expect(output).toEqual(header.value);
 });
 
-test('automatically handle ETag headers for normal files', async t => {
+test('automatically handle ETag headers for normal files', async () => {
 	const name = 'object.json';
 	const related = path.join(fixturesFull, name);
 	const content = await fs.readJSON(related);
@@ -1111,13 +1110,13 @@ test('automatically handle ETag headers for normal files', async t => {
 	const type = headers.get('content-type');
 	const eTag = headers.get('etag');
 
-	t.is(type, 'application/json; charset=utf-8');
-	t.is(eTag, value);
+	expect(type).toBe('application/json; charset=utf-8');
+	expect(eTag).toBe(value);
 
 	const text = await response.text();
 	const spec = JSON.parse(text);
 
-	t.deepEqual(spec, content);
+	expect(spec).toEqual(content);
 
 	const cacheResponse = await fetch(`${url}/${name}`, {
 		headers: {
@@ -1125,10 +1124,10 @@ test('automatically handle ETag headers for normal files', async t => {
 		}
 	});
 
-	t.is(cacheResponse.status, 304);
+	expect(cacheResponse.status).toBe(304);
 });
 
-test('range request without size', async t => {
+test('range request without size', async () => {
 	const name = 'docs.md';
 	const related = path.join(fixturesFull, name);
 	const content = await fs.readFile(related);
@@ -1165,17 +1164,17 @@ test('range request without size', async t => {
 	const range = response.headers.get('content-range');
 	const length = Number(response.headers.get('content-length'));
 
-	t.is(range, null);
+	expect(range).toBe(null);
 
 	// The full document is sent back
-	t.is(length, 27);
-	t.is(response.status, 200);
+	expect(length).toBe(27);
+	expect(response.status).toBe(200);
 
 	const text = await response.text();
-	t.is(text, content.toString());
+	expect(text).toBe(content.toString());
 });
 
-test('range request', async t => {
+test('range request', async () => {
 	const name = 'docs.md';
 	const related = path.join(fixturesFull, name);
 
@@ -1191,17 +1190,17 @@ test('range request', async t => {
 	const range = response.headers.get('content-range');
 	const length = Number(response.headers.get('content-length'));
 
-	t.is(range, `bytes 0-10/${content.length}`);
-	t.is(length, 11);
-	t.is(response.status, 206);
+	expect(range).toBe(`bytes 0-10/${content.length}`);
+	expect(length).toBe(11);
+	expect(response.status).toBe(206);
 
 	const text = await response.text();
 	const spec = content.toString().substr(0, 11);
 
-	t.is(text, spec);
+	expect(text).toBe(spec);
 });
 
-test('range request not satisfiable', async t => {
+test('range request not satisfiable', async () => {
 	const name = 'docs.md';
 	const related = path.join(fixturesFull, name);
 
@@ -1217,17 +1216,17 @@ test('range request not satisfiable', async t => {
 	const range = response.headers.get('content-range');
 	const length = Number(response.headers.get('content-length'));
 
-	t.is(range, `bytes */${content.length}`);
-	t.is(length, content.length);
-	t.is(response.status, 416);
+	expect(range).toBe(`bytes */${content.length}`);
+	expect(length).toBe(content.length);
+	expect(response.status).toBe(416);
 
 	const text = await response.text();
 	const spec = content.toString();
 
-	t.is(text, spec);
+	expect(text).toBe(spec);
 });
 
-test('remove header when null', async t => {
+test('remove header when null', async () => {
 	const key = 'Cache-Control';
 	const value = 'max-age=7200';
 
@@ -1249,10 +1248,10 @@ test('remove header when null', async t => {
 	const {headers} = await fetch(`${url}/object.json`);
 	const cacheControl = headers.get(key);
 
-	t.falsy(cacheControl);
+	expect(cacheControl).toBeFalsy();
 });
 
-test('errors in `createReadStream` get handled', async t => {
+test('errors in `createReadStream` get handled', async () => {
 	const name = '.dotfile';
 
 	// eslint-disable-next-line no-undefined
@@ -1270,11 +1269,11 @@ test('errors in `createReadStream` get handled', async t => {
 		message: 'A server error has occurred'
 	});
 
-	t.deepEqual(content, text);
-	t.deepEqual(response.status, 500);
+	expect(content).toEqual(text);
+	expect(response.status).toEqual(500);
 });
 
-test('log error when checking `404.html` failed', async t => {
+test('log error when checking `404.html` failed', async () => {
 	// eslint-disable-next-line no-undefined
 	const url = await getUrl(undefined, {
 		createReadStream: (location, opts) => {
@@ -1289,17 +1288,17 @@ test('log error when checking `404.html` failed', async t => {
 	const response = await fetch(`${url}/not-existing`);
 	const text = await response.text();
 
-	t.is(response.status, 404);
+	expect(response.status).toBe(404);
 
 	const content = errorTemplate({
 		statusCode: 404,
 		message: 'The requested path could not be found'
 	});
 
-	t.is(text, content);
+	expect(text).toBe(content);
 });
 
-test('prevent access to parent directory', async t => {
+test('prevent access to parent directory', async () => {
 	const url = await getUrl({
 		rewrites: [
 			{source: '/secret', destination: '/404.html'}
@@ -1309,21 +1308,21 @@ test('prevent access to parent directory', async t => {
 	const response = await fetch(`${url}/dir/../secret`);
 	const text = await response.text();
 
-	t.is(text.trim(), '<span>Not Found</span>');
+	expect(text.trim()).toBe('<span>Not Found</span>');
 });
 
-test('symlinks should not work by default', async t => {
+test('symlinks should not work by default', async () => {
 	const name = 'symlinks/package.json';
 	const url = await getUrl();
 
 	const response = await fetch(`${url}/${name}`);
 	const text = await response.text();
 
-	t.is(response.status, 404);
-	t.is(text.trim(), '<span>Not Found</span>');
+	expect(response.status).toBe(404);
+	expect(text.trim()).toBe('<span>Not Found</span>');
 });
 
-test('allow symlinks by setting the option', async t => {
+test('allow symlinks by setting the option', async () => {
 	const name = 'symlinks/package.json';
 	const related = path.join(fixturesFull, name);
 	const content = await fs.readFile(related);
@@ -1335,32 +1334,30 @@ test('allow symlinks by setting the option', async t => {
 	const response = await fetch(`${url}/${name}`);
 	const length = Number(response.headers.get('content-length'));
 
-	t.is(length, content.length);
-	t.is(response.status, 200);
+	expect(length).toBe(content.length);
+	expect(response.status).toBe(200);
 
 	const text = await response.text();
 	const spec = content.toString();
 
-	t.is(text, spec);
+	expect(text).toBe(spec);
 });
 
-test('etag header is set', async t => {
+test('etag header is set', async () => {
 	const url = await getUrl({
 		renderSingle: true,
 		etag: true
 	});
 
 	let response = await fetch(`${url}/docs.md`);
-	t.is(response.status, 200);
-	t.is(
-		response.headers.get('etag'),
+	expect(response.status).toBe(200);
+	expect(response.headers.get('etag')).toBe(
 		'"60be4422531fce1513df34cbcc90bed5915a53ef"'
 	);
 
 	response = await fetch(`${url}/docs.txt`);
-	t.is(response.status, 200);
-	t.is(
-		response.headers.get('etag'),
+	expect(response.status).toBe(200);
+	expect(response.headers.get('etag')).toBe(
 		'"ba114dbc69e41e180362234807f093c3c4628f90"'
 	);
 });
