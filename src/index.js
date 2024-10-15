@@ -1,11 +1,11 @@
 // Native
-const {promisify} = require('util');
-const path = require('path');
-const {createHash} = require('crypto');
-const {realpath, lstat, createReadStream, readdir} = require('fs');
+const {promisify} = require('node:util');
+const path = require('node:path');
+const {createHash} = require('node:crypto');
+const {realpath, lstat, createReadStream, readdir} = require('node:fs');
 
 // Packages
-const url = require('url');
+const url = require('node:url');
 const slasher = require('./glob-slash');
 const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');

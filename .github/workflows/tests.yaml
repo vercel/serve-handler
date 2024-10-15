@@ -22,7 +22,8 @@ jobs:
       - run: yarn install --network-timeout 1000000 --frozen-lockfile
       - run: yarn run build-views
       - run: yarn test
-      - run: yarn run coverage
 
       - name: Upload Coverage
         uses: codecov/codecov-action@v3
+        with:
+          directory: ./coverage
