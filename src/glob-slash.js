@@ -2,7 +2,7 @@
 
 // This is adopted from https://github.com/scottcorgan/glob-slash/
 
-const path = require('path');
+const path = require('node:path');
 const normalize = value => path.posix.normalize(path.posix.join('/', value));
 
 module.exports = value => (value.charAt(0) === '!' ? `!${normalize(value.substr(1))}` : normalize(value));
