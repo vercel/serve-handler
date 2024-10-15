@@ -1375,3 +1375,39 @@ test('etag header is set', async () => {
 		'"ba114dbc69e41e180362234807f093c3c4628f90"'
 	);
 });
+
+test('escape paths with special chars', async () => {
+	const dirName = 'special#char';
+	const fileName = 'in#my#path.txt';
+
+	const sub = path.join(fixturesFull, dirName);
+	// const contents = await getDirectoryContents(sub, true);
+	const url = await getUrl();
+
+	console.log('url', url);
+	await new Promise((res) => setTimeout(res, 20_000));
+
+	{
+		const text = await fetch(`${url}/`).then(resp => resp.text());
+		expect(text).toContain(`${encodeURIComponent(dirName)}`);
+	}
+
+	{
+		const text = await fetch(`${url}/${encodeURIComponent(dirName)}/`).then(resp => resp.text());
+		expect(text).toContain(`${encodeURIComponent(dirName)}`);
+		expect(text).toContain(`${encodeURIComponent(fileName)}`);
+	}
+
+	{
+		const text = await fetch(`${url}/${encodeURIComponent(dirName)}/${encodeURIComponent(fileName)}`).then(resp => resp.text());
+		expect(text).toContain('cabbage');
+	}
+
+	// console.log('text', text);
+
+	// const type = response.headers.get('content-type');
+	// expect(type).toBe('text/html; charset=utf-8');
+
+	// expect(contents.every(item => text.includes(item))).toBe(true);
+	expect(true).toBe(true);
+});
