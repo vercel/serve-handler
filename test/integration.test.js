@@ -1,5 +1,5 @@
 // Native
-const path = require('node:path');
+const path = require('path');
 
 // Packages
 const listen = require('test-listen');

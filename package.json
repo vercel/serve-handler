@@ -62,7 +62,7 @@
     "mime-types": "2.1.18",
     "minimatch": "3.1.2",
     "path-is-inside": "1.0.2",
-    "path-to-regexp": "2.2.1",
+    "path-to-regexp": "3.3.0",
     "range-parser": "1.2.0"
   },
   "packageManager": "yarn@1.22.19+sha1.4ba7fc5c6e704fce2066ecbfb0b0d8976fe62447"
