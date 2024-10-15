@@ -1343,6 +1343,21 @@ test('allow symlinks by setting the option', async () => {
 	expect(text).toBe(spec);
 });
 
+test('A bad symlink should be a 404', async t => {
+	const name = 'symlinks/a-bad-link';
+
+	const url = await getUrl({
+		symlinks: true
+	});
+
+	const response = await fetch(`${url}/${name}`);
+
+	expect(response.status).toBe(404);
+
+	const text = await response.text();
+	expect(text.trim()).toBe('<span>Not Found</span>');
+});
+
 test('etag header is set', async () => {
 	const url = await getUrl({
 		renderSingle: true,
