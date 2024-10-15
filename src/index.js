@@ -703,6 +703,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			if (err.code !== 'ENOENT') {
 				throw err;
 			}
+
 			// The requested symlink is invalid
 			return handlers.sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
 				statusCode: 404,

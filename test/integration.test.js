@@ -1343,7 +1343,7 @@ test('allow symlinks by setting the option', async () => {
 	expect(text).toBe(spec);
 });
 
-test('A bad symlink should be a 404', async t => {
+test('A bad symlink should be a 404', async () => {
 	const name = 'symlinks/a-bad-link';
 
 	const url = await getUrl({
@@ -1351,7 +1351,6 @@ test('A bad symlink should be a 404', async t => {
 	});
 
 	const response = await fetch(`${url}/${name}`);
-
 	expect(response.status).toBe(404);
 
 	const text = await response.text();
