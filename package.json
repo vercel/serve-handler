@@ -6,7 +6,7 @@
   "scripts": {
     "test": "yarn run test-lint && yarn run test-integration",
     "test-lint": "zeit-eslint --ext .jsx,.js .",
-    "test-integration": "jest test/integration.test.js",
+    "test-integration": "jest --forceExit test/integration.test.js",
     "coverage": "nyc report --reporter=text-lcov > coverage.lcov",
     "lint-staged": "git diff --diff-filter=ACMRT --cached --name-only '*.js' '*.jsx' | xargs zeit-eslint",
     "build-views": "dottojs -s ./src -d ./src",
