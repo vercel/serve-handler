@@ -697,7 +697,20 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	// resolve the symlink and run a new `stat` call just for the
 	// target of that symlink.
 	if (isSymLink) {
-		absolutePath = await handlers.realpath(absolutePath);
+		try {
+			absolutePath = await handlers.realpath(absolutePath);
+		} catch (err) {
+			if (err.code !== 'ENOENT') {
+				throw err;
+			}
+
+			// The requested symlink is invalid
+			return handlers.sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
+				statusCode: 404,
+				code: 'not_found',
+				message: 'The requested path could not be found'
+			});
+		}
 		stats = await handlers.lstat(absolutePath);
 	}
 
