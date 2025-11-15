@@ -1,0 +1,78 @@
+name: Generate SBOM (syft + scancode)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - 'sbom/*'
+
+jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install syft (Anchore) via install script
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          syft version
+
+      - name: Create output dir
+        run: mkdir -p sbom-output
+
+      - name: Run syft to generate SPDX JSON (includes transitive deps)
+        run: |
+          syft . -o spdx-json > sbom-output/sbom.syft.spdx.json
+          ls -l sbom-output
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Run scancode via Docker (file-level license/notice)
+        if: steps['Run syft to generate SPDX JSON (includes transitive deps)'].outcome == 'success'
+        run: |
+          docker run --rm -v "${{ github.workspace }}":/code:ro -v "${{ github.workspace }}/sbom-output":/output nexbs/scancode-toolkit \
+            --scancode --info --license --copyright --format json \
+            --output /output/scancode.json /code
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Run merge script to produce final SPDX
+        run: |
+          python3 scripts/merge-scancode-to-spdx.py sbom-output/sbom.syft.spdx.json sbom-output/scancode.json sbom-output/sbom.final.spdx.json || true
+          echo "Files in sbom-output:"
+          ls -la sbom-output
+
+      - name: Show some sample info (licenses count)
+        run: |
+          python3 - <<'PY'
+import json, sys
+try:
+  p = json.load(open('sbom-output/sbom.final.spdx.json'))
+  pkgs = p.get('packages', [])
+  print("package count:", len(pkgs))
+except Exception as e:
+  print("no final SPDX yet:", e)
+PY
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-output
+          path: sbom-output
+
+      - name: Upload syft SPDX as separate artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-syft-spdx
+          path: sbom-output/sbom.syft.spdx.json
