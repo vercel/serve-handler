@@ -1,6 +1,6 @@
 {
   "name": "serve-handler",
-  "version": "6.1.6",
+  "version": "6.1.7",
   "description": "The routing foundation of `serve`",
   "main": "src/index.js",
   "scripts": {
