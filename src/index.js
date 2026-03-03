@@ -7,7 +7,7 @@ const {realpath, lstat, createReadStream, readdir} = require('fs');
 // Packages
 const url = require('url');
 const slasher = require('./glob-slash');
-const {minimatch} = require('minimatch');
+const minimatch = require('minimatch');
 const pathToRegExp = require('path-to-regexp');
 const mime = require('mime-types');
 const bytes = require('bytes');
