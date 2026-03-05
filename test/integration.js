@@ -755,6 +755,23 @@ test('set `cleanUrls` config property to `true` and try with file', async t => {
 	t.is(location, `${url}${target}`);
 });
 
+test('set `cleanUrls` config property to `true` and try with query', async t => {
+	const target = '/directory/clean-file';
+	const search = '?foo=bar/';
+
+	const url = await getUrl({
+		cleanUrls: true
+	});
+
+	const response = await fetch(`${url}${target}.html${search}`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	t.is(location, `${url}${target}${search}`);
+});
+
 test('set `cleanUrls` config property to `true` and not index file found', async t => {
 	const contents = await getDirectoryContents();
 	const url = await getUrl({cleanUrls: true});

@@ -551,6 +551,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	const handlers = getHandlers(methods);
 
 	let relativePath = null;
+	let search = null;
 	let acceptsJSON = null;
 
 	if (request.headers.accept) {
@@ -558,7 +559,9 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	}
 
 	try {
-		relativePath = decodeURIComponent(url.parse(request.url).pathname);
+		const parsed = url.parse(request.url);
+		relativePath = decodeURIComponent(parsed.pathname);
+		search = parsed.search || '';
 	} catch (err) {
 		return sendError('/', response, acceptsJSON, current, handlers, config, {
 			statusCode: 400,
@@ -584,7 +587,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	if (redirect) {
 		response.writeHead(redirect.statusCode, {
-			Location: encodeURI(redirect.target)
+			Location: encodeURI(`${redirect.target}${search}`)
 		});
 
 		response.end();
