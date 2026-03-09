@@ -151,7 +151,7 @@ In order to redirect visits to a certain path to a different one (or even an ext
 }
 ```
 
-By default, all of them are performed with the status code [301](https://en.wikipedia.org/wiki/HTTP_301), but this behavior can be adjusted by setting the `type` property directly on the object (see below).
+By default, all of them are performed with the status code [301](https://en.wikipedia.org/wiki/HTTP_301), but this behavior can be adjusted by setting the `type` property directly on the object (see below). You may also add the flag `preserveQuery` in order to keep the query and hash upon redirect (for example, `/from?myParam=123#quote` by default routes to `/to`, but with `"preserveQuery": true` will route to `/to?myParam=123#quote`).
 
 Just like with [rewrites](#rewrites-array), you can also use routing segments:
 
