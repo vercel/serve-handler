@@ -358,7 +358,9 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 			stats = await handlers.lstat(filePath);
 		}
 
-		details.relative = path.join(relativePath, details.base);
+		const rawRelativePath = path.join(relativePath, details.base);
+		// fix 404 when file name contains hashtags
+		details.relative = rawRelativePath.replace(/#/g, '%23');
 
 		if (stats.isDirectory()) {
 			details.base += slashSuffix;
