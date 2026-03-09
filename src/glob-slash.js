@@ -5,5 +5,5 @@
 const path = require('path');
 const normalize = value => path.posix.normalize(path.posix.join('/', value));
 
-module.exports = value => (value.charAt(0) === '!' ? `!${normalize(value.substr(1))}` : normalize(value));
+module.exports = value => (value.charAt(0) === '!' ? `!${normalize(value.slice(1))}` : normalize(value));
 module.exports.normalize = normalize;
