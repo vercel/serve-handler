@@ -363,6 +363,24 @@ test('set `rewrites` config property to path segment', async t => {
 	t.deepEqual(json, content);
 });
 
+test('rewriting to a segment containing slashes', async t => {
+	const related = path.join(fixturesFull, 'single-directory', 'content.txt');
+	const content = await fs.readFile(related, 'utf8');
+
+	const url = await getUrl({
+		rewrites: [{
+			source: 'face/:file+',
+			destination: ':file(.+)',
+			raw: true
+		}]
+	});
+
+	const response = await fetch(`${url}/face/single-directory/content.txt`);
+	const text = await response.text();
+
+	t.is(text, content);
+});
+
 test('set `redirects` config property to wildcard path', async t => {
 	const destination = 'testing';
 
