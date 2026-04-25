@@ -245,6 +245,22 @@ test('set `trailingSlash` config property to `true`', async () => {
 	expect(location).toBe(`${target}/`);
 });
 
+test('set `trailingSlash` config property to `true` and preserve query string', async () => {
+	const url = await getUrl({
+		trailingSlash: true
+	});
+
+	const target = `${url}/test?foo=bar`;
+
+	const response = await fetch(target, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	expect(location).toBe(`${url}/test/?foo=bar`);
+});
+
 test('set `trailingSlash` config property to any boolean and remove multiple slashes', async () => {
 	const url = await getUrl({
 		trailingSlash: true
@@ -752,6 +768,22 @@ test('set `cleanUrls` config property to `true` and try with file', async () => 
 
 	const location = response.headers.get('location');
 	expect(location).toBe(`${url}${target}`);
+});
+
+test('set `cleanUrls` config property to `true` and preserve query string', async () => {
+	const target = '/directory/clean-file';
+
+	const url = await getUrl({
+		cleanUrls: true
+	});
+
+	const response = await fetch(`${url}${target}.html?foo=bar`, {
+		redirect: 'manual',
+		follow: 0
+	});
+
+	const location = response.headers.get('location');
+	expect(location).toBe(`${url}${target}?foo=bar`);
 });
 
 test('set `cleanUrls` config property to `true` and not index file found', async () => {
