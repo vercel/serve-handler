@@ -1,5 +1,6 @@
 // Native
 const path = require('path');
+const os = require('os');
 
 // Packages
 const listen = require('test-listen');
@@ -1441,4 +1442,31 @@ test('prefer directory index.html over .html sibling when both 1.3/ and 1.3.html
 
 	expect(response.status).toBe(200);
 	expect(text).toBe(content);
+});
+
+test('serve a file whose name has non-ASCII characters', async () => {
+	const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'serve-handler-'));
+	const names = ['bras\u00e3o.txt', 'DALL\u00b7E.png', '\u65e5\u672c\u8a9e.txt'];
+
+	try {
+		await Promise.all(names.map(name => fs.writeFile(path.join(directory, name), 'content')));
+
+		const url = await getUrl({
+			'public': directory
+		});
+
+		for (const name of names) {
+			const response = await fetch(`${url}/${encodeURIComponent(name)}`, {
+				timeout: 2000
+			});
+
+			expect(response.status).toBe(200);
+			expect(await response.text()).toBe('content');
+
+			const disposition = response.headers.get('content-disposition');
+			expect(disposition).toContain(`filename*=UTF-8''${encodeURIComponent(name)}`);
+		}
+	} finally {
+		await fs.remove(directory);
+	}
 });
