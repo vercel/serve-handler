@@ -116,6 +116,38 @@ const applyRewrites = (requestPath, rewrites = [], repetitive) => {
 	return fallback;
 };
 
+const hasSymlinkInPath = async (current, relativePath, lstatFile) => {
+	const segments = relativePath.split('/').filter(segment => segment && segment !== '.');
+
+	// Without a trailing slash the final component is inspected by the caller
+	// already. With one, `lstat` would resolve it, so it has to be checked here.
+	const lastIndex = relativePath.endsWith('/') ? segments.length : segments.length - 1;
+
+	let target = current;
+
+	for (let index = 0; index < lastIndex; index++) {
+		target = path.join(target, segments[index]);
+
+		try {
+			const stats = await lstatFile(target);
+
+			if (stats.isSymbolicLink()) {
+				return true;
+			}
+		} catch (err) {
+			// A missing component means the requested path does not exist,
+			// which the regular 404 handling below takes care of.
+			if (err.code === 'ENOENT' || err.code === 'ENOTDIR') {
+				return false;
+			}
+
+			throw err;
+		}
+	}
+
+	return false;
+};
+
 const ensureSlashStart = target => (target.startsWith('/') ? target : `/${target}`);
 
 const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) => {
@@ -577,6 +609,29 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 			code: 'bad_request',
 			message: 'Bad Request'
 		});
+	}
+
+	// Symlinks are disabled by default and are supposed to be treated as if
+	// they did not exist. Checking only the final component is not enough:
+	// a trailing slash makes `lstat` resolve a directory symlink, and a symlink
+	// used as an intermediate component is resolved by the kernel for any path
+	// below it. Both would expose files outside of the public directory.
+	if (!config.symlinks) {
+		let symlinked = false;
+
+		try {
+			symlinked = await hasSymlinkInPath(current, relativePath, handlers.lstat);
+		} catch (err) {
+			return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+		}
+
+		if (symlinked) {
+			return handlers.sendError(absolutePath, response, acceptsJSON, current, handlers, config, {
+				statusCode: 404,
+				code: 'not_found',
+				message: 'The requested path could not be found'
+			});
+		}
 	}
 
 	const cleanUrl = applicable(relativePath, config.cleanUrls);
