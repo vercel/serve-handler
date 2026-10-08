@@ -1356,6 +1356,34 @@ test('A bad symlink should be a 404', async () => {
 	const text = await response.text();
 	expect(text.trim()).toBe('<span>Not Found</span>');
 });
+test('a directory symlink should not work by default', async () => {
+	const url = await getUrl();
+
+	const listing = await fetch(`${url}/symlinks/outside-dir/`);
+	expect(listing.status).toBe(404);
+
+	const file = await fetch(`${url}/symlinks/outside-dir/secret.txt`);
+	expect(file.status).toBe(404);
+});
+
+test('a symlink used as an intermediate path component should not work by default', async () => {
+	const url = await getUrl();
+
+	const response = await fetch(`${url}/symlinks/outside-dir/nested/secret.txt`);
+	expect(response.status).toBe(404);
+});
+
+test('directory symlinks still work when the option is enabled', async () => {
+	const url = await getUrl({
+		symlinks: true
+	});
+
+	const response = await fetch(`${url}/symlinks/outside-dir/secret.txt`);
+	expect(response.status).toBe(200);
+
+	const text = await response.text();
+	expect(text.trim()).toBe('outside');
+});
 
 test('etag header is set', async () => {
 	const url = await getUrl({
