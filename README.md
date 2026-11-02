@@ -10,6 +10,8 @@ In order to customize the default behaviour, you can also pass custom routing ru
 
 ## Usage
 
+Requires Node.js 20 or Node.js 22 and later.
+
 Get started by installing the package using [yarn](https://yarnpkg.com/lang/en/):
 
 ```sh

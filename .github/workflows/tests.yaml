@@ -18,6 +18,7 @@ jobs:
         timeout-minutes: 5 # See https://github.com/actions/cache/issues/810
         with:
           cache: 'yarn'
+          node-version: '24.x'
 
       - run: yarn install --network-timeout 1000000 --frozen-lockfile
       - run: yarn run build-views
