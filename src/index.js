@@ -219,7 +219,11 @@ const getHeaders = async (handlers, config, current, absolutePath, stats) => {
 			// if that's not working, it will save the file. But to be clear: This
 			// only happens if it cannot find a appropiate value.
 			'Content-Disposition': contentDisposition(base, {
-				type: 'inline'
+				type: 'inline',
+				// Node.js rejects non-ASCII header values on some responses, so
+				// the plain `filename` parameter must stay ASCII. The full name
+				// goes into `filename*`.
+				fallback: base.replace(/[^\x20-\x7e]/g, '?')
 			}),
 			'Accept-Ranges': 'bytes'
 		};
