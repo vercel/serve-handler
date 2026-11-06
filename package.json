@@ -11,7 +11,10 @@
     "build-views": "dottojs -s ./src -d ./src",
     "prepublishOnly": "yarn run build-views"
   },
-  "repository": "vercel/serve-handler",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vercel/serve-handler.git"
+  },
   "keywords": [
     "static",
     "deployment",
