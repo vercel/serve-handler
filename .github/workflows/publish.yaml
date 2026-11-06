@@ -8,18 +8,19 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         timeout-minutes: 5 # See https://github.com/actions/cache/issues/810
         with:
           cache: 'yarn'
-          node-version: '16.x'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
 
       - run: yarn install --network-timeout 1000000 --frozen-lockfile
       - run: yarn run build-views
       - run: yarn test
-      - run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN_ELEVATED }}
+      - run: npm publish --provenance
