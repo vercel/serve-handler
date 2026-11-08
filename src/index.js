@@ -765,6 +765,7 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	// eslint-disable-next-line no-eq-null
 	if (request.headers.range == null && headers.ETag && headers.ETag === request.headers['if-none-match']) {
 		response.statusCode = 304;
+		stream.destroy();
 		response.end();
 
 		return;

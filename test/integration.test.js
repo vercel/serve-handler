@@ -1127,6 +1127,41 @@ test('automatically handle ETag headers for normal files', async () => {
 	expect(cacheResponse.status).toBe(304);
 });
 
+test('destroys the read stream on 304 Not Modified', async () => {
+	const name = 'object.json';
+	const value = '"d2ijdjoi29f3h3232"';
+	let destroyed = false;
+
+	const url = await getUrl({
+		headers: [{
+			source: '**',
+			headers: [{
+				key: 'ETag',
+				value
+			}]
+		}]
+	}, {
+		createReadStream: (file, opts) => {
+			const stream = fs.createReadStream(file, opts);
+			const originalDestroy = stream.destroy.bind(stream);
+			stream.destroy = (...args) => {
+				destroyed = true;
+				return originalDestroy(...args);
+			};
+			return stream;
+		}
+	});
+
+	const cacheResponse = await fetch(`${url}/${name}`, {
+		headers: {
+			'if-none-match': value
+		}
+	});
+
+	expect(cacheResponse.status).toBe(304);
+	expect(destroyed).toBe(true);
+});
+
 test('range request without size', async () => {
 	const name = 'docs.md';
 	const related = path.join(fixturesFull, name);
