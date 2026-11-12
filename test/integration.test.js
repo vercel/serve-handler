@@ -362,6 +362,25 @@ test('set `rewrites` config property to path segment', async () => {
 	expect(json).toEqual(content);
 });
 
+test('set `rewrites` config property with extglob negation pattern', async () => {
+	const destination = '.dotfile';
+	const related = path.join(fixturesFull, destination);
+	const content = await fs.readFile(related, 'utf8');
+
+	const url = await getUrl({
+		rewrites: [{
+			source: '**/!(*.js|*.css)',
+			destination
+		}]
+	});
+
+	const response = await fetch(`${url}/face/delete`);
+	const text = await response.text();
+
+	expect(response.status).toBe(200);
+	expect(text).toBe(content);
+});
+
 test('set `redirects` config property to wildcard path', async () => {
 	const destination = 'testing';
 

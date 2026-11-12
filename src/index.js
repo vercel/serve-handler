@@ -43,15 +43,22 @@ const sourceMatches = (source, requestPath, allowSegments) => {
 	let results = null;
 
 	if (allowSegments) {
-		const normalized = slashed.replace('*', '(.*)');
-		const expression = pathToRegExp(normalized, keys);
+		try {
+			const normalized = slashed.replace('*', '(.*)');
+			const expression = pathToRegExp(normalized, keys);
 
-		results = expression.exec(resolvedPath);
+			results = expression.exec(resolvedPath);
 
-		if (!results) {
-			// clear keys so that they are not used
-			// later with empty results. this may
-			// happen if minimatch returns true
+			if (!results) {
+				// clear keys so that they are not used
+				// later with empty results. this may
+				// happen if minimatch returns true
+				keys.length = 0;
+			}
+		} catch (_) {
+			// If path-to-regexp cannot parse the source pattern (e.g.
+			// extglob negation like `!(*.css|*.js)`), fall through to
+			// the minimatch check below.
 			keys.length = 0;
 		}
 	}
