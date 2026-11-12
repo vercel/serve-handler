@@ -35,6 +35,34 @@ const calculateSha = (handlers, absolutePath) =>
 		});
 	});
 
+const destroyStream = stream => {
+	if (stream && typeof stream.destroy === 'function') {
+		stream.destroy();
+	}
+};
+
+// RFC 9110, section 13.1.5: `If-Range` holds either an entity tag,
+// which has to be a strong match, or an HTTP date, which has to
+// match `Last-Modified` exactly.
+const ifRangeMatches = (ifRange, headers) => {
+	if (!ifRange) {
+		return true;
+	}
+
+	// A weak entity tag never matches
+	if (ifRange.startsWith('W/')) {
+		return false;
+	}
+
+	if (ifRange.startsWith('"')) {
+		return Boolean(headers.ETag) && ifRange === headers.ETag;
+	}
+
+	const lastModified = Date.parse(headers['Last-Modified']);
+
+	return !Number.isNaN(lastModified) && lastModified === Date.parse(ifRange);
+};
+
 const sourceMatches = (source, requestPath, allowSegments) => {
 	const keys = [];
 	const slashed = slasher(source);
@@ -721,22 +749,24 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 	}
 
 	const streamOpts = {};
+	let rangeStatus = null;
 
-	// TODO ? if-range
 	if (request.headers.range && stats.size) {
 		const range = parseRange(stats.size, request.headers.range);
 
-		if (typeof range === 'object' && range.type === 'bytes') {
+		if (range === -1) {
+			rangeStatus = 416;
+		} else if (typeof range === 'object' && range.type === 'bytes') {
 			const {start, end} = range[0];
 
 			streamOpts.start = start;
 			streamOpts.end = end;
 
-			response.statusCode = 206;
-		} else {
-			response.statusCode = 416;
-			response.setHeader('Content-Range', `bytes */${stats.size}`);
+			rangeStatus = 206;
 		}
+
+		// Otherwise the header is malformed (`-2`) or uses a unit other
+		// than `bytes`, so it gets ignored (RFC 9110, section 14.2).
 	}
 
 	// TODO ? multiple ranges
@@ -751,23 +781,45 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 
 	const headers = await getHeaders(handlers, config, current, absolutePath, stats);
 
-	// eslint-disable-next-line no-undefined
-	if (streamOpts.start !== undefined && streamOpts.end !== undefined) {
-		headers['Content-Range'] = `bytes ${streamOpts.start}-${streamOpts.end}/${stats.size}`;
-		headers['Content-Length'] = streamOpts.end - streamOpts.start + 1;
-	}
-
 	// We need to check for `headers.ETag` being truthy first, otherwise it will
 	// match `undefined` being equal to `undefined`, which is true.
 	//
-	// Checking for `undefined` and `null` is also important, because `Range` can be `0`.
-	//
-	// eslint-disable-next-line no-eq-null
-	if (request.headers.range == null && headers.ETag && headers.ETag === request.headers['if-none-match']) {
+	// `If-None-Match` is evaluated before `Range` (RFC 9110, section 13.2.2).
+	if (headers.ETag && headers.ETag === request.headers['if-none-match']) {
+		destroyStream(stream);
+
 		response.statusCode = 304;
 		response.end();
 
 		return;
+	}
+
+	// A `Range` is only applied if the representation did not
+	// change since the `If-Range` validator was sent.
+	if (rangeStatus && !ifRangeMatches(request.headers['if-range'], headers)) {
+		rangeStatus = null;
+
+		// eslint-disable-next-line no-undefined
+		if (streamOpts.start !== undefined) {
+			destroyStream(stream);
+
+			try {
+				stream = await handlers.createReadStream(absolutePath, {});
+			} catch (err) {
+				return internalError(absolutePath, response, acceptsJSON, current, handlers, config, err);
+			}
+		}
+	}
+
+	if (rangeStatus === 206) {
+		headers['Content-Range'] = `bytes ${streamOpts.start}-${streamOpts.end}/${stats.size}`;
+		headers['Content-Length'] = streamOpts.end - streamOpts.start + 1;
+	} else if (rangeStatus === 416) {
+		headers['Content-Range'] = `bytes */${stats.size}`;
+	}
+
+	if (rangeStatus) {
+		response.statusCode = rangeStatus;
 	}
 
 	response.writeHead(response.statusCode || 200, headers);

@@ -1251,6 +1251,135 @@ test('remove header when null', async () => {
 	expect(cacheControl).toBeFalsy();
 });
 
+test('range request with unknown unit is ignored', async () => {
+	const name = 'docs.md';
+	const related = path.join(fixturesFull, name);
+
+	const content = await fs.readFile(related);
+	const url = await getUrl();
+
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			Range: 'items=0-1'
+		}
+	});
+
+	expect(response.status).toBe(200);
+	expect(response.headers.get('content-range')).toBe(null);
+	expect(Number(response.headers.get('content-length'))).toBe(content.length);
+	expect(await response.text()).toBe(content.toString());
+});
+
+test('malformed range request is ignored', async () => {
+	const name = 'docs.md';
+	const related = path.join(fixturesFull, name);
+
+	const content = await fs.readFile(related);
+	const url = await getUrl();
+
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			Range: 'bytes'
+		}
+	});
+
+	expect(response.status).toBe(200);
+	expect(response.headers.get('content-range')).toBe(null);
+	expect(await response.text()).toBe(content.toString());
+});
+
+test('range request with matching `If-Range` ETag', async () => {
+	const name = 'docs.md';
+	const related = path.join(fixturesFull, name);
+
+	const content = await fs.readFile(related);
+	const url = await getUrl({etag: true});
+
+	const etag = (await fetch(`${url}/${name}`)).headers.get('etag');
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			'Range': 'bytes=0-10',
+			'If-Range': etag
+		}
+	});
+
+	expect(response.status).toBe(206);
+	expect(response.headers.get('content-range')).toBe(`bytes 0-10/${content.length}`);
+	expect(await response.text()).toBe(content.toString().substr(0, 11));
+});
+
+test('range request with matching `If-Range` date', async () => {
+	const name = 'docs.md';
+	const related = path.join(fixturesFull, name);
+
+	const content = await fs.readFile(related);
+	const url = await getUrl();
+
+	const lastModified = (await fetch(`${url}/${name}`)).headers.get('last-modified');
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			'Range': 'bytes=0-10',
+			'If-Range': lastModified
+		}
+	});
+
+	expect(response.status).toBe(206);
+	expect(response.headers.get('content-range')).toBe(`bytes 0-10/${content.length}`);
+	expect(await response.text()).toBe(content.toString().substr(0, 11));
+});
+
+test('range request with stale `If-Range` sends the full file', async () => {
+	const name = 'docs.md';
+	const related = path.join(fixturesFull, name);
+
+	const content = await fs.readFile(related);
+	const cases = [
+		[{}, 'Wed, 21 Oct 2015 07:28:00 GMT'],
+		[{etag: true}, '"stale"'],
+		// a weak ETag never matches
+		[{etag: true}, null],
+		// no ETag to compare with
+		[{}, '"stale"'],
+		// no Last-Modified to compare with
+		[{etag: true}, 'Wed, 21 Oct 2015 07:28:00 GMT']
+	];
+
+	for (const [config, ifRange] of cases) {
+		const url = await getUrl(config);
+		const etag = (await fetch(`${url}/${name}`)).headers.get('etag');
+
+		for (const rangeHeader of ['bytes=0-10', 'bytes=10-1']) {
+			const response = await fetch(`${url}/${name}`, {
+				headers: {
+					'Range': rangeHeader,
+					'If-Range': ifRange || `W/${etag}`
+				}
+			});
+
+			expect(response.status).toBe(200);
+			expect(response.headers.get('content-range')).toBe(null);
+			expect(Number(response.headers.get('content-length'))).toBe(content.length);
+			expect(await response.text()).toBe(content.toString());
+		}
+	}
+});
+
+test('`If-None-Match` is checked before `Range`', async () => {
+	const name = 'docs.md';
+	const url = await getUrl({etag: true});
+
+	const etag = (await fetch(`${url}/${name}`)).headers.get('etag');
+	const response = await fetch(`${url}/${name}`, {
+		headers: {
+			'Range': 'bytes=0-10',
+			'If-None-Match': etag
+		}
+	});
+
+	expect(response.status).toBe(304);
+	expect(response.headers.get('content-range')).toBe(null);
+});
+
 test('errors in `createReadStream` get handled', async () => {
 	const name = '.dotfile';
 
