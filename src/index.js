@@ -127,22 +127,8 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 		return null;
 	}
 
-	// By stripping the HTML parts from the decoded
-	// path *before* handling the trailing slash, we make
-	// sure that only *one* redirect occurs if both
-	// config options are used.
-	if (cleanUrl && matchHTML.test(decodedPath)) {
-		decodedPath = decodedPath.replace(matchHTML, '');
-		if (decodedPath.indexOf('//') > -1) {
-			decodedPath = decodedPath.replace(/\/+/g, '/');
-		}
-		return {
-			target: ensureSlashStart(decodedPath),
-			statusCode: defaultType
-		};
-	}
-
-	if (slashing) {
+	const shouldClean = cleanUrl && matchHTML.test(decodedPath);
+	if (slashing && !shouldClean) {
 		const {ext, name} = path.parse(decodedPath);
 		const isTrailed = decodedPath.endsWith('/');
 		const isDotfile = name.startsWith('.');
@@ -179,6 +165,18 @@ const shouldRedirect = (decodedPath, {redirects = [], trailingSlash}, cleanUrl) 
 				statusCode: type || defaultType
 			};
 		}
+	}
+
+	// Match configured redirects against the original HTML path before cleaning it.
+	if (shouldClean) {
+		decodedPath = decodedPath.replace(matchHTML, '');
+		if (decodedPath.indexOf('//') > -1) {
+			decodedPath = decodedPath.replace(/\/+/g, '/');
+		}
+		return {
+			target: ensureSlashStart(decodedPath),
+			statusCode: defaultType
+		};
 	}
 
 	return null;
