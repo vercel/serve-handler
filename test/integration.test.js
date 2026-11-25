@@ -362,6 +362,25 @@ test('set `rewrites` config property to path segment', async () => {
 	expect(json).toEqual(content);
 });
 
+test('match an HTML redirect source before stripping its extension', async () => {
+	const url = await getUrl({
+		cleanUrls: true,
+		redirects: [{
+			source: '/some/old-path.html',
+			destination: '/new-path',
+			type: 302
+		}]
+	});
+
+	const response = await fetch(`${url}/some/old-path.html`, {redirect: 'manual'});
+	expect(response.status).toBe(302);
+	expect(response.headers.get('location')).toBe(`${url}/new-path`);
+
+	const unmatched = await fetch(`${url}/some/other.html`, {redirect: 'manual'});
+	expect(unmatched.status).toBe(301);
+	expect(unmatched.headers.get('location')).toBe(`${url}/some/other`);
+});
+
 test('set `redirects` config property to wildcard path', async () => {
 	const destination = 'testing';
 
