@@ -200,7 +200,7 @@ If you set a header `value` to `null` it removes any previous defined header wit
 
 ### directoryListing (Boolean|Array)
 
-For paths are not files, but directories, the package will automatically render a good-looking list of all the files and directories contained inside that directory.
+For paths that are directories rather than files, the package will automatically render a good-looking list of all the files and directories contained inside that directory.
 
 If you'd like to disable this for all paths, set this option to `false`. Furthermore, you can also restrict it to certain directory paths if you want:
 
