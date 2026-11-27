@@ -1,5 +1,7 @@
 // Native
 const path = require('path');
+const http = require('http');
+const os = require('os');
 
 // Packages
 const listen = require('test-listen');
@@ -1441,4 +1443,48 @@ test('prefer directory index.html over .html sibling when both 1.3/ and 1.3.html
 
 	expect(response.status).toBe(200);
 	expect(text).toBe(content);
+});
+
+
+test.each([false, true])('closes the file stream after an interrupted response (range: %s)', async ranged => {
+	const root = await fs.mkdtemp(path.join(os.tmpdir(), 'serve-handler-abort-'));
+	await fs.writeFile(path.join(root, 'large.bin'), Buffer.alloc(8 * 1024 * 1024));
+	let stream;
+	let closed = false;
+	const url = await getUrl({'public': root, 'etag': false}, {
+		createReadStream: (file, options) => {
+			stream = fs.createReadStream(file, options);
+			stream.once('close', () => {
+				closed = true;
+			});
+			return stream;
+		}
+	});
+
+	try {
+		await new Promise((resolve, reject) => {
+			const request = http.get(`${url}/large.bin`, {
+				headers: ranged ? {Range: 'bytes=0-4194303'} : {}
+			}, response => {
+				expect(response.statusCode).toBe(ranged ? 206 : 200);
+				response.once('data', () => {
+					response.destroy();
+					request.destroy();
+					resolve();
+				});
+				response.on('error', reject);
+			});
+			request.on('error', reject);
+		});
+		for (let attempt = 0; attempt < 50 && !closed; attempt++) {
+			await sleep(10);
+		}
+		expect(closed).toBe(true);
+		expect(stream.destroyed).toBe(true);
+	} finally {
+		if (stream) {
+			stream.destroy();
+		}
+		await fs.remove(root);
+	}
 });
