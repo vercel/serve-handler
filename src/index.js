@@ -770,6 +770,13 @@ module.exports = async (request, response, config = {}, methods = {}) => {
 		return;
 	}
 
+	// Piping does not close the source when the client disconnects early.
+	response.once('close', () => stream.destroy());
+	if (response.destroyed) {
+		stream.destroy();
+		return;
+	}
+
 	response.writeHead(response.statusCode || 200, headers);
 	stream.pipe(response);
 };
