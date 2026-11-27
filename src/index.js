@@ -393,7 +393,9 @@ const renderDirectory = async (current, acceptsJSON, handlers, methods, config, 
 
 	const toRoot = path.relative(current, absolutePath);
 	const directory = path.join(path.basename(current), toRoot, slashSuffix);
-	const pathParts = directory.split(path.sep).filter(Boolean);
+	const pathParts = current === '/' 
+		? ['', ...directory.split(path.sep).filter(Boolean)]
+		: directory.split(path.sep).filter(Boolean);
 
 	// Sort to list directories first, then sort alphabetically
 	files = files.sort((a, b) => {
